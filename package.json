@@ -15,7 +15,7 @@
   },
   "author": "R3DPR0XY (versão PT-BR) · original: Capri Companion contributors",
   "license": "MIT",
-  "description": "Capri PT-BR \u2014 companheira de IA para o desktop, versão em português por R3DPR0XY (projeto de fã, não oficial)",
+  "description": "Capri PT-BR — companheira de IA para o desktop, versão em português por R3DPR0XY (projeto de fã, não oficial)",
   "dependencies": {
     "@google/genai": "^2.31.0",
     "@huggingface/transformers": "^3.0.0",
@@ -92,5 +92,13 @@
       "uninstallerIcon": "build/icon.ico",
       "artifactName": "Capri-Setup-${version}.exe"
     }
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "koffi@3.3.4": true,
+    "onnxruntime-node@1.21.0": true,
+    "sharp@0.34.5": true,
+    "electron-winstaller@5.4.0": true,
+    "protobufjs@7.6.6": true
   }
 }
