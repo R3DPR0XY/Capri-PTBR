@@ -11,7 +11,7 @@ fs.rmSync(out, { recursive: true, force: true });
 const common = { bundle: true, sourcemap: prod ? false : 'linked', minify: prod, target: 'es2023', logLevel: 'warning', legalComments: 'none' };
 
 await Promise.all([
-  build({ ...common, entryPoints: [path.join(root, 'src/main/index.ts')], outfile: path.join(out, 'main/index.js'), platform: 'node', format: 'cjs', external: ['electron', 'koffi'] }),
+  build({ ...common, entryPoints: [path.join(root, 'src/main/index.ts')], outfile: path.join(out, 'main/index.js'), platform: 'node', format: 'cjs', external: ['electron', 'koffi', '@huggingface/transformers', 'onnxruntime-node', 'onnxruntime-web', 'sharp'] }),
   build({ ...common, entryPoints: [path.join(root, 'src/preload/preload.ts')], outfile: path.join(out, 'preload/preload.js'), platform: 'node', format: 'cjs', external: ['electron'] }),
   build({ ...common, entryPoints: { character: path.join(root, 'src/renderer/character/main.ts'), panel: path.join(root, 'src/renderer/panel/main.ts') }, outdir: path.join(out, 'renderer'), platform: 'browser', format: 'iife' }),
 ]);

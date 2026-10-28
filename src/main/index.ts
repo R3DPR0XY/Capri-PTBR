@@ -30,6 +30,7 @@ import { createCharacterWindow, createPanelWindow, characterSize, displaysNow, D
 import { clampToDisplays } from './desktop/displays';
 import { foregroundHandle, foregroundRect, handleToBigint, isOtherAppFullscreen, loadWin32, win32Status } from './desktop/win32';
 import { probeWindowsRecognizer, transcribeOpenAI, transcribeWindows, WakeWordListener } from './voice/speech';
+import { LocalWhisper } from './voice/localWhisper';
 
 const T0 = performance.timeOrigin;
 const TEST = process.env.CAPRI_TEST === '1';
@@ -63,6 +64,7 @@ let panelWin: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let drag: DragController;
 let wake: WakeWordListener;
+let whisper: LocalWhisper;
 let startupMs = 0;
 let monitor: ConnectionMonitor;
 let teleporter: TeleportController;
@@ -158,6 +160,9 @@ async function init() {
   loadWin32(log);
   devGeminiKey = TEST && process.env.CAPRI_NO_DEV_KEY === '1' ? undefined : loadDevKey();
   wake = new WakeWordListener(log);
+  whisper = new LocalWhisper(path.join(dir, 'models'), log);
+  lastSttSig = JSON.stringify([s0.voice.micPermission, s0.voice.sttEngine, s0.voice.localStt.model]);
+  if (s0.voice.micPermission && s0.voice.sttEngine === 'local') void whisper.warmUp(s0.voice.localStt.model); // a primeira fala não espera o modelo carregar
   wake.on('wake', onWake);
   wake.on('error', (e: Error) => { log.warn('wake word disabled', { error: e }); toPanel('chat:phase', { phase: 'error', detail: e.message }); });
 
@@ -411,6 +416,7 @@ function requestConfirmation(req: ActionRequest): Promise<boolean> {
 // ---------------------------------------------------------------- settings side-effects
 let lastAiSig = '';
 let lastTpSig = '';
+let lastSttSig = ''; // voz local: só recarrega o modelo quando o motor/modelo/microfone mudam
 let lastScale = NaN; // the character scale her window was last sized for
 function onSettingsChanged(s: Settings) {
   const sig = JSON.stringify([s.ai.provider, s.ai.gemini, s.ai.ollama, s.ai.openai, s.ai.anthropic]);
@@ -438,6 +444,12 @@ function onSettingsChanged(s: Settings) {
   toPanel('settings:changed', s);
   applyStartup(s);
   if (s.voice.wakeWord && s.voice.micPermission) wake.start(); else wake.stop();
+  const sttSig = JSON.stringify([s.voice.micPermission, s.voice.sttEngine, s.voice.localStt.model]);
+  if (sttSig !== lastSttSig && s.voice.micPermission && s.voice.sttEngine === 'local') {
+    void whisper.warmUp(s.voice.localStt.model, (detail) => toPanel('chat:phase', { phase: 'idle', detail }))
+      .then((ok) => toPanel('chat:phase', { phase: ok ? 'idle' : 'error', detail: ok ? 'Voz em português pronta.' : 'Não consegui carregar o modelo de voz. Veja os logs na aba Sistema.' }));
+  }
+  lastSttSig = sttSig;
   updateTrayMenu();
 }
 
@@ -502,9 +514,11 @@ async function onAudio(wav: Uint8Array, durationMs: number) {
   cue({ type: 'phase', phase: 'transcribing' });
   const s = settings.get();
   try {
-    const text = s.voice.sttEngine === 'openai'
-      ? await transcribeOpenAI(wav, s.voice.openaiStt.baseUrl, s.voice.openaiStt.model, secrets.get('openaiVoice') ?? secrets.get('openai'))
-      : await transcribeWindows(wav);
+    const text = s.voice.sttEngine === 'local'
+      ? await whisper.transcribe(wav, s.voice.localStt.model, (detail) => toPanel('chat:phase', { phase: 'transcribing', detail }))
+      : s.voice.sttEngine === 'openai'
+        ? await transcribeOpenAI(wav, s.voice.openaiStt.baseUrl, s.voice.openaiStt.model, secrets.get('openaiVoice') ?? secrets.get('openai'))
+        : await transcribeWindows(wav);
     toPanel('transcript', { text, final: true });
     if (!text) { toPanel('chat:phase', { phase: 'idle', detail: 'Não entendi — tente de novo ou digite.' }); cue({ type: 'phase', phase: 'idle' }); return; }
     await convo.send(text, { viaVoice: true });

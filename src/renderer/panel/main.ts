@@ -392,7 +392,9 @@ async function renderVoice() {
   sc.append(
     group('Microfone',
       sw('Permitir microfone', 'voice.micPermission', () => go('voice')),
-      field('Fala para texto', select('voice.sttEngine', 'Fala para texto', [['windows', 'Windows (no aparelho, só inglês)'], ['openai', 'Compatível com Whisper (recomendado p/ PT)']], () => go('voice'))),
+      field('Fala para texto', select('voice.sttEngine', 'Fala para texto', [['local', 'Whisper local (português, offline)'], ['windows', 'Windows (sem português)'], ['openai', 'Servidor compatível com Whisper']], () => go('voice')),
+        S.voice.sttEngine === 'local' ? 'Roda no seu PC. O modelo é baixado uma vez do Hugging Face e depois funciona sem internet.' : undefined),
+      S.voice.sttEngine === 'local' ? field('Modelo de voz', select('voice.localStt.model', 'Modelo de voz', [['tiny', 'Tiny (~75 MB, mais rápido)'], ['base', 'Base (~150 MB, equilibrado)'], ['small', 'Small (~500 MB, mais preciso)']])) : null,
       S.voice.sttEngine === 'openai' ? h('div', {}, field('Endpoint', text('voice.openaiStt.baseUrl', 'Endpoint de fala para texto')), field('Modelo', text('voice.openaiStt.model', 'Modelo de fala para texto'))) : null,
       field('Palavra de ativação “Ei Capri”', toggle('voice.wakeWord', 'Palavra de ativação'), S.voice.micPermission ? undefined : 'Precisa do microfone.'),
     ),

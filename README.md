@@ -17,7 +17,8 @@ A Capri de *Cyberpunk: Edgerunners 2* morando no seu desktop do Windows, agora e
   - "abrir github.com", "abre o bloco de notas"
   - "procurar arquivos chamados orçamento", "teletransporta", "vem aqui", "que horas são?"
 - **Horários em português:** "daqui a", "em", "às 15h", "15h30", "amanhã às 9", "às 8 da noite", "meia hora".
-- **Voz:** prioriza vozes pt-BR do Windows (como a Maria). A transcrição via Whisper é enviada como português.
+- **Ela entende você falando em português:** um Whisper local vem embutido. Roda no seu PC, sem servidor e sem chave de API.
+- **Voz:** prioriza vozes pt-BR do Windows (como a Maria) para responder.
 - **Palavra de ativação:** "ei Capri" / "oi Capri" quando houver um reconhecedor de fala em português instalado.
 - **Exploração:** quando ativada, abre a Wikipédia em português.
 
@@ -28,9 +29,11 @@ Compilar você mesmo garante que está rodando exatamente este código, que foi 
 Precisa de Windows 10 ou 11 (64 bits) e Node.js 22 ou mais novo.
 
 ```
-npm ci
+npm install
 npm start
 ```
+
+Use `npm install` (e não `npm ci`) na primeira vez: ele baixa a biblioteca de voz local e atualiza o `package-lock.json`.
 
 Para gerar o instalador `.exe`:
 
@@ -65,7 +68,13 @@ Na primeira execução você escolhe a IA:
 
 ## Voz em português
 
-O reconhecimento de fala nativo do Windows (System.Speech) normalmente só tem pacotes em inglês e outros idiomas, **sem português**. Para falar com ela em português, use **Voz → Fala para texto → Compatível com Whisper**, apontando para um servidor Whisper local ou para a API da OpenAI.
+Para falar com ela, ative **Voz → Permitir microfone**. O padrão de **Fala para texto** já é **Whisper local (português, offline)**.
+
+- Na primeira vez, o modelo de voz é baixado do Hugging Face e guardado em `%APPDATA%\Capri\models`. O progresso aparece no chat. Depois disso, tudo funciona sem internet e o áudio nunca sai do seu PC.
+- Dá para escolher o tamanho do modelo: **Tiny** (~75 MB, mais rápido), **Base** (~150 MB, o padrão) ou **Small** (~500 MB, entende melhor).
+- Segure `Ctrl+Alt+T` (ou o botão do microfone no chat), fale e solte.
+
+O reconhecimento nativo do Windows (System.Speech) continua disponível como opção, mas não tem português. Também dá para usar um servidor compatível com Whisper (local ou a API da OpenAI).
 
 Para a voz dela, instale o pacote de fala em português em **Configurações do Windows → Hora e idioma → Fala**. Ela escolhe a voz pt-BR sozinha.
 
@@ -76,7 +85,8 @@ O código desta versão foi auditado antes da tradução. O resultado:
 - **Sem telemetria e sem envio de dados escondido.** O app só se comunica com o provedor de IA e o serviço de voz que você escolher.
 - **A interface não acessa a internet:** a política de segurança (CSP) bloqueia qualquer conexão a partir das janelas.
 - **Electron isolado:** sandbox ligado, `contextIsolation` ativo e `nodeIntegration` desligado. As mensagens internas validam quem as enviou.
-- **Chaves de API** criptografadas com o DPAPI do Windows, nunca gravadas em texto puro. O áudio do microfone nunca é guardado.
+- **Chaves de API** criptografadas com o DPAPI do Windows, nunca gravadas em texto puro. O áudio do microfone nunca é guardado e, com o Whisper local, nunca sai do PC.
+- **Única conexão nova:** o download do modelo de voz, uma vez, do Hugging Face (huggingface.co).
 - **Dependências** vindas só do registro oficial do npm.
 - **Atenção:** "usar o computador" e "explorar sozinha" mandam capturas da sua tela para o Gemini. Os dois vêm desligados, pedem confirmação e param com Esc ou quando você mexe o mouse. Ela é proibida de digitar senhas, comprar, apagar arquivos, enviar mensagens ou mudar configurações do sistema.
 
@@ -88,7 +98,7 @@ Tudo fica em `%APPDATA%\Capri`.
 npm test
 ```
 
-Inclui testes dos comandos e horários em português.
+Inclui testes dos comandos e horários em português e da voz local.
 
 ## Créditos e licença
 

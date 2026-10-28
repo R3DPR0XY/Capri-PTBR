@@ -18,6 +18,7 @@
   "description": "Capri PT-BR \u2014 companheira de IA para o desktop, versão em português por R3DPR0XY (projeto de fã, não oficial)",
   "dependencies": {
     "@google/genai": "^2.31.0",
+    "@huggingface/transformers": "^3.0.0",
     "koffi": "^3.3.4"
   },
   "devDependencies": {
@@ -48,7 +49,12 @@
     "asar": true,
     "asarUnpack": [
       "node_modules/koffi/**",
-      "node_modules/@koromix/**"
+      "node_modules/@koromix/**",
+      "node_modules/@huggingface/transformers/**",
+      "node_modules/onnxruntime-node/**",
+      "node_modules/onnxruntime-common/**",
+      "node_modules/sharp/**",
+      "node_modules/@img/**"
     ],
     "extraResources": [
       {
