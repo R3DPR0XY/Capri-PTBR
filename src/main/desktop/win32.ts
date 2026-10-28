@@ -5,7 +5,7 @@ import type { Logger } from '../log';
 type Fn = (...a: unknown[]) => unknown;
 interface Api {
   GetForegroundWindow: Fn; GetWindowRect: Fn; MonitorFromWindow: Fn; GetMonitorInfoW: Fn;
-  GetClassNameW: Fn; SHQueryUserNotificationState: Fn; GetAsyncKeyState: Fn; address: (p: unknown) => bigint;
+  GetClassNameW: Fn; GetWindowTextW: Fn; SHQueryUserNotificationState: Fn; GetAsyncKeyState: Fn; address: (p: unknown) => bigint;
 }
 let api: Api | null = null;
 let loadError: string | null = null;
@@ -26,6 +26,7 @@ export function loadWin32(log?: Logger): boolean {
       MonitorFromWindow: user32.func('void* __stdcall MonitorFromWindow(void* hwnd, uint32 flags)'),
       GetMonitorInfoW: user32.func('bool __stdcall GetMonitorInfoW(void* hMonitor, _Inout_ CAPRI_MONITORINFO* info)'),
       GetClassNameW: user32.func('int __stdcall GetClassNameW(void* hWnd, _Out_ uint16_t* buf, int max)'),
+      GetWindowTextW: user32.func('int __stdcall GetWindowTextW(void* hWnd, _Out_ uint16_t* buf, int max)'),
       GetAsyncKeyState: user32.func('int16 __stdcall GetAsyncKeyState(int vKey)'),
       SHQueryUserNotificationState: shell32.func('long __stdcall SHQueryUserNotificationState(_Out_ int* state)'),
       address: (p: unknown) => (p ? BigInt(koffi.address(p)) : 0n),
@@ -81,6 +82,17 @@ export function foregroundRect(ownHandles: bigint[]): { x: number; y: number; wi
     if (!api.GetWindowRect(hwnd, r)) return null;
     return { x: r.left!, y: r.top!, width: r.right! - r.left!, height: r.bottom! - r.top! };
   } catch { return null; }
+}
+
+/** Foreground app window (physical px rect + title), excluding the shell and our own windows. */
+export function foregroundWindow(ownHandles: bigint[]): { rect: { x: number; y: number; width: number; height: number }; title: string } | null {
+  const rect = foregroundRect(ownHandles);
+  if (!rect || !api || rect.width < 8 || rect.height < 8) return null;
+  try {
+    const buf = new Uint16Array(256);
+    const n = api.GetWindowTextW(api.GetForegroundWindow(), buf, 256) as number;
+    return { rect, title: String.fromCharCode(...buf.slice(0, Math.max(0, n))) };
+  } catch { return { rect, title: '' }; }
 }
 
 /** Is the left mouse button physically down? (used to end drags robustly). Null if unknown. */

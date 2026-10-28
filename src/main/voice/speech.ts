@@ -10,7 +10,7 @@ const PS = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'Windo
 const PS_ARGS = ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', '-'];
 
 /** Run a PowerShell script fed on stdin; inputs are passed only through env vars (no string interpolation). */
-function runPs(script: string, env: Record<string, string>, timeoutMs: number): Promise<{ code: number; out: string; err: string }> {
+export function runPs(script: string, env: Record<string, string>, timeoutMs: number): Promise<{ code: number; out: string; err: string }> {
   return new Promise((resolve) => {
     const child = spawn(PS, PS_ARGS, { env: { ...process.env, ...env }, windowsHide: true });
     let out = '', err = '';

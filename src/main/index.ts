@@ -28,9 +28,10 @@ import { Conversation } from './ai/conversation';
 import type { ActionContext } from './actions/registry';
 import { createCharacterWindow, createPanelWindow, characterSize, displaysNow, DragController, OFFSCREEN, reveal, conceal, shown } from './windows';
 import { clampToDisplays } from './desktop/displays';
-import { foregroundHandle, foregroundRect, handleToBigint, isOtherAppFullscreen, loadWin32, win32Status } from './desktop/win32';
+import { foregroundHandle, foregroundRect, foregroundWindow, handleToBigint, isOtherAppFullscreen, loadWin32, win32Status } from './desktop/win32';
 import { probeWindowsRecognizer, transcribeOpenAI, transcribeWindows, WakeWordListener } from './voice/speech';
 import { LocalWhisper } from './voice/localWhisper';
+import { ocrPng } from './desktop/ocr';
 
 const T0 = performance.timeOrigin;
 const TEST = process.env.CAPRI_TEST === '1';
@@ -175,6 +176,7 @@ async function init() {
     teleport: (where) => teleporter.go(where as TeleportTarget, 'ai'),
     emote: (name) => { cue({ type: 'clip', name }); return true; },
     useComputer: (task) => useComputer(task),
+    readScreen: () => readScreen(),
   };
   convo = new Conversation({
     settings: () => settings.get(),
@@ -563,6 +565,34 @@ function raiseCharacter() {
 function raiseTick() {
   const fg = foregroundHandle();
   if (fg !== lastFg) { lastFg = fg; raiseCharacter(); }
+  // a última janela de app em foco: quando o usuário pede pelo chat, o foco está no painel dela
+  const w = foregroundWindow(ownHandles());
+  if (w) lastAppWin = w;
+}
+// ---------------------------------------------------------------- screen reading
+let lastAppWin: ReturnType<typeof foregroundWindow> = null;
+/** Text in the user's active window, read with the Windows OCR on this PC (nothing leaves the machine). */
+async function readScreen(): Promise<{ ok: boolean; text: string; window: string; detail?: string }> {
+  const w = foregroundWindow(ownHandles()) ?? lastAppWin;
+  if (!w) return { ok: false, text: '', window: '', detail: 'Não achei uma janela aberta para ler.' };
+  try {
+    const d = screen.getDisplayMatching(screen.screenToDipRect(null, w.rect));
+    const phys = screen.dipToScreenRect(null, d.bounds);
+    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: phys.width, height: phys.height } });
+    const src = sources.find((x) => x.display_id === String(d.id)) ?? sources[0];
+    if (!src) return { ok: false, text: '', window: w.title, detail: 'Não consegui capturar a tela.' };
+    const img = src.thumbnail, size = img.getSize(), k = size.width / phys.width;
+    const x = Math.max(0, Math.round((w.rect.x - phys.x) * k)), y = Math.max(0, Math.round((w.rect.y - phys.y) * k));
+    const width = Math.min(size.width - x, Math.round(w.rect.width * k)), height = Math.min(size.height - y, Math.round(w.rect.height * k));
+    if (width < 8 || height < 8) return { ok: false, text: '', window: w.title, detail: 'A janela está fora da tela.' };
+    const text = await ocrPng(img.crop({ x, y, width, height }).toPNG());
+    log.info('read screen', { chars: text.length });
+    if (!text) return { ok: false, text: '', window: w.title, detail: 'Não encontrei texto nessa janela.' };
+    return { ok: true, text, window: w.title };
+  } catch (e) {
+    log.warn('read screen failed', { error: e });
+    return { ok: false, text: '', window: w.title, detail: (e as Error).message };
+  }
 }
 // ---------------------------------------------------------------- computer control
 // vision models in order of click accuracy; each has its own per-minute quota on free keys
