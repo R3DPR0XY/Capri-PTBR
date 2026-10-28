@@ -30,12 +30,12 @@ let conn: ConnectionStatus | null = null;
 let tab = location.hash.slice(1) || 'chat';
 const TABS: { id: string; label: string; icon: string }[] = [
   { id: 'chat', label: 'Chat', icon: 'chat' },
-  { id: 'model', label: 'Model', icon: 'model' },
-  { id: 'voice', label: 'Voice', icon: 'voice' },
-  { id: 'character', label: 'Character', icon: 'eye' },
-  { id: 'memory', label: 'Memory', icon: 'memory' },
-  { id: 'privacy', label: 'Privacy', icon: 'shield' },
-  { id: 'system', label: 'System', icon: 'pulse' },
+  { id: 'model', label: 'Modelo', icon: 'model' },
+  { id: 'voice', label: 'Voz', icon: 'voice' },
+  { id: 'character', label: 'Personagem', icon: 'eye' },
+  { id: 'memory', label: 'Memória', icon: 'memory' },
+  { id: 'privacy', label: 'Privacidade', icon: 'shield' },
+  { id: 'system', label: 'Sistema', icon: 'pulse' },
 ];
 // older entry points (tray menu, shortcuts, tests) still land somewhere sensible
 const ALIASES: Record<string, string> = { settings: 'model', look: 'character', move: 'character', behavior: 'character', permissions: 'privacy', diagnostics: 'system' };
@@ -52,7 +52,7 @@ const getByPath = (path: string): unknown => path.split('.').reduce<unknown>((o,
 async function save(path: string, value: unknown) {
   const r = await api.invoke('settings:set', setByPath(path, value));
   S = r.settings;
-  if (r.repaired.length) toast(`Invalid value for ${r.repaired.join(', ')}; reset to default.`, true);
+  if (r.repaired.length) toast(`Valor inválido em ${r.repaired.join(', ')}; voltou ao padrão.`, true);
 }
 const timers: Record<string, number> = {};
 function saveDebounced(path: string, value: unknown, ms = 400) {
@@ -102,7 +102,7 @@ const phaseChip = document.getElementById('phaseChip')!;
 const phaseText = document.getElementById('phaseText')!;
 const connChip = document.getElementById('connChip')!;
 const connText = document.getElementById('connText')!;
-const PHASE_LABEL: Record<AssistantPhase, string> = { idle: 'ready', listening: 'listening', transcribing: 'transcribing', thinking: 'thinking', speaking: 'speaking', error: 'error', offline: 'offline' };
+const PHASE_LABEL: Record<AssistantPhase, string> = { idle: 'pronta', listening: 'ouvindo', transcribing: 'transcrevendo', thinking: 'pensando', speaking: 'falando', error: 'erro', offline: 'offline' };
 let statusEl: HTMLElement | null = null;
 let stopBtn: HTMLButtonElement | null = null;
 function renderPhase() {
@@ -114,11 +114,11 @@ function renderPhase() {
   }
   if (stopBtn) stopBtn.hidden = !(phase === 'thinking' || phase === 'speaking');
 }
-const CONN_LABEL: Record<ConnectionStatus['state'], string> = { connecting: 'Connecting', connected: 'Online', disconnected: 'Offline', error: 'Error' };
+const CONN_LABEL: Record<ConnectionStatus['state'], string> = { connecting: 'Conectando', connected: 'Online', disconnected: 'Offline', error: 'Erro' };
 function renderConn() {
   if (!conn) return;
   connChip.dataset.state = conn.state;
-  connText.textContent = conn.provider === 'offline' ? 'No AI' : CONN_LABEL[conn.state];
+  connText.textContent = conn.provider === 'offline' ? 'Sem IA' : CONN_LABEL[conn.state];
   connChip.title = `${conn.provider}${conn.model ? ` · ${conn.model}` : ''}: ${conn.detail}`;
 }
 
@@ -156,11 +156,11 @@ function msgEl(m: ChatMessage): HTMLElement {
   if (m.role === 'action') {
     const st = m.meta?.actionStatus ?? '';
     const cls = st === 'done' ? 'ok' : ['failed', 'blocked', 'rejected', 'declined'].includes(st) ? 'bad' : '';
-    return h('div', { class: 'msg action' }, h('span', { class: `tag ${cls}` }, st || 'action'), h('span', {}, m.content));
+    return h('div', { class: 'msg action' }, h('span', { class: `tag ${cls}` }, st || 'ação'), h('span', {}, m.content));
   }
   const el = h('div', { class: `msg ${m.role}${m.meta?.error ? ' err' : ''}`, 'data-id': m.id },
     m.role === 'assistant' ? h('span', { class: 'who' }, 'Capri') : null, ...richText(m.content));
-  if (m.meta?.interrupted) el.append(h('span', { class: 'meta' }, '— interrupted'));
+  if (m.meta?.interrupted) el.append(h('span', { class: 'meta' }, '— interrompida'));
   if (m.meta?.error && m.content !== m.meta.error) el.append(h('span', { class: 'meta' }, m.meta.error));
   return el;
 }
@@ -176,8 +176,8 @@ function confirmCard(req: ActionRequest): HTMLElement {
     await api.invoke('action:respond', { id: req.id, approved });
   };
   c.append(h('div', {}, req.summary));
-  if (req.tainted) c.append(h('div', { class: 'why' }, 'Asked right after reading file names or notes. Check this is what you wanted.'));
-  c.append(h('div', { class: 'row' }, btn('Allow', () => respond(true), 'primary', 'check'), btn('Deny', () => respond(false), '', 'close')));
+  if (req.tainted) c.append(h('div', { class: 'why' }, 'Pedido logo depois de ler nomes de arquivos ou notas. Confira se é isso mesmo que você quer.'));
+  c.append(h('div', { class: 'row' }, btn('Permitir', () => respond(true), 'primary', 'check'), btn('Negar', () => respond(false), '', 'close')));
   return c;
 }
 let chatReady = false;
@@ -193,7 +193,7 @@ async function renderChat() {
   scroller = h('div', { class: 'scroll' });
   messagesEl = h('div', { class: 'messages', role: 'log', 'aria-live': 'polite' });
   scroller.append(messagesEl);
-  const ta = h('textarea', { placeholder: 'Message Capri', rows: 1, 'aria-label': 'Message' });
+  const ta = h('textarea', { placeholder: 'Mensagem para a Capri', rows: 1, 'aria-label': 'Mensagem' });
   const send = async (value?: string) => {
     const v = (value ?? ta.value).trim();
     if (!v) return;
@@ -203,7 +203,7 @@ async function renderChat() {
   const autosize = () => { ta.style.height = 'auto'; ta.style.height = `${Math.min(140, Math.max(34, ta.scrollHeight + 2))}px`; };
   ta.addEventListener('input', autosize);
   ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } });
-  const micBtn = h('button', { class: 'btn icon-only', type: 'button', title: S.voice.micPermission ? 'Hold to talk (Ctrl+Alt+T)' : 'Microphone is off (Voice settings)', 'aria-label': 'Push to talk' }, icon('mic'));
+  const micBtn = h('button', { class: 'btn icon-only', type: 'button', title: S.voice.micPermission ? 'Segure para falar (Ctrl+Alt+T)' : 'Microfone desligado (aba Voz)', 'aria-label': 'Apertar para falar' }, icon('mic'));
   micBtn.disabled = !S.voice.micPermission;
   const micStart = () => { if (mic) return; mic = true; micBtn.classList.add('rec'); void api.invoke('voice:ptt', 'start'); };
   const micStop = () => { if (!mic) return; mic = false; micBtn.classList.remove('rec'); void api.invoke('voice:ptt', 'stop'); };
@@ -211,15 +211,15 @@ async function renderChat() {
   micBtn.addEventListener('pointerup', micStop);
   micBtn.addEventListener('pointerleave', micStop);
   micBtn.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); mic ? micStop() : micStart(); } });
-  stopBtn = h('button', { class: 'btn icon-only', type: 'button', title: 'Stop (Esc)', 'aria-label': 'Stop', onclick: () => api.invoke('chat:stop') }, icon('stop'));
-  const sendBtn = h('button', { class: 'btn primary icon-only', type: 'button', title: 'Send (Enter)', 'aria-label': 'Send', onclick: () => send() }, icon('send'));
+  stopBtn = h('button', { class: 'btn icon-only', type: 'button', title: 'Parar (Esc)', 'aria-label': 'Parar', onclick: () => api.invoke('chat:stop') }, icon('stop'));
+  const sendBtn = h('button', { class: 'btn primary icon-only', type: 'button', title: 'Enviar (Enter)', 'aria-label': 'Enviar', onclick: () => send() }, icon('send'));
   statusEl = h('div', { class: 'status' });
   view.append(h('div', { class: 'chat' }, scroller, statusEl, h('div', { class: 'composer' }, ta, micBtn, stopBtn, sendBtn)));
 
   const hist = await api.invoke('chat:history', { limit: 200 });
   if (!hist.length) {
-    messagesEl.append(h('div', { class: 'empty' }, h('div', {}, 'Say something.'),
-      h('div', { class: 'try' }, ...['Who are you?', 'Teleport', 'Timer 5 minutes'].map((q) => h('button', { type: 'button', onclick: () => send(q) }, q)))));
+    messagesEl.append(h('div', { class: 'empty' }, h('div', {}, 'Diz alguma coisa.'),
+      h('div', { class: 'try' }, ...['Quem é você?', 'Teletransporta', 'Timer de 5 minutos'].map((q) => h('button', { type: 'button', onclick: () => send(q) }, q)))));
   }
   const shownIds = new Set(hist.map((m) => m.id));
   const early = [...messagesEl.children].filter((el) => !shownIds.has((el as HTMLElement).dataset.id ?? ''));
@@ -272,7 +272,7 @@ api.on('action:confirm', (p) => {
   window.focus();
 });
 api.on('action:result', (p) => { const r = p as ActionResult; if (!r.ok) toast(r.summary, true); });
-api.on('transcript', (p) => { const t = p as { text: string }; if (t.text) toast(`Heard: “${t.text}”`); });
+api.on('transcript', (p) => { const t = p as { text: string }; if (t.text) toast(`Ouvi: “${t.text}”`); });
 api.on('reminder:fired', (p) => { const r = p as Reminder; toast(r.text); });
 api.on('settings:changed', (s) => { S = s as Settings; if (tab === 'chat') renderPhase(); });
 api.on('panel:tab', (t) => { const target = ALIASES[String(t)] ?? String(t); if (target !== tab) go(target); });
@@ -285,34 +285,34 @@ function refreshConn() {
   const tone = conn.state === 'connected' ? 'ok' : conn.state === 'error' ? 'bad' : conn.state === 'connecting' ? 'info' : '';
   connBody.replaceChildren(h('dl', { class: 'kv' },
     h('dt', {}, 'Status'), h('dd', {}, h('span', { class: `tag ${tone}` }, CONN_LABEL[conn.state])),
-    conn.model ? h('dt', {}, 'Model') : null, conn.model ? h('dd', { class: 'mono' }, `${conn.model}${conn.usingFallback ? ' (fallback)' : ''}`) : null,
-    conn.state !== 'connected' ? h('dt', {}, 'Detail') : null, conn.state !== 'connected' ? h('dd', {}, conn.detail) : null,
-    conn.provider === 'gemini' ? h('dt', {}, 'API key') : null,
-    conn.provider === 'gemini' ? h('dd', {}, conn.keySource === 'secure-store' ? 'Saved in Capri' : conn.keySource === 'environment' ? 'GEMINI_API_KEY' : 'Not set') : null,
-    h('dt', {}, 'Checked'), h('dd', {}, conn.checkedAt ? new Date(conn.checkedAt).toLocaleTimeString() : '—')));
+    conn.model ? h('dt', {}, 'Modelo') : null, conn.model ? h('dd', { class: 'mono' }, `${conn.model}${conn.usingFallback ? ' (reserva)' : ''}`) : null,
+    conn.state !== 'connected' ? h('dt', {}, 'Detalhe') : null, conn.state !== 'connected' ? h('dd', {}, conn.detail) : null,
+    conn.provider === 'gemini' ? h('dt', {}, 'Chave de API') : null,
+    conn.provider === 'gemini' ? h('dd', {}, conn.keySource === 'secure-store' ? 'Salva na Capri' : conn.keySource === 'environment' ? 'GEMINI_API_KEY' : 'Não definida') : null,
+    h('dt', {}, 'Verificado'), h('dd', {}, conn.checkedAt ? new Date(conn.checkedAt).toLocaleTimeString('pt-BR') : '—')));
 }
 /** Claude through the user's own account: sign-in state, sign in / out, and the model. */
 function claudeAccountFields() {
-  const state = h('span', { class: 'sub' }, 'Checking…');
+  const state = h('span', { class: 'sub' }, 'Verificando…');
   const actions = h('span', { class: 'row' });
   const render = async () => {
     const s = await api.invoke('claude:status');
-    state.textContent = !s.installed ? 'Install Claude Code (claude.com/code), then reopen this.' : s.loggedIn ? s.detail : 'Not signed in';
+    state.textContent = !s.installed ? 'Instale o Claude Code (claude.com/code) e abra isto de novo.' : s.loggedIn ? s.detail : 'Não conectado';
     actions.replaceChildren(
       !s.installed ? '' :
-      s.loggedIn ? btn('Sign out', async () => { await api.invoke('claude:signout'); await render(); }, 'quiet') :
-      btn('Sign in to Claude', async () => {
-        state.textContent = 'Opening Claude sign-in…';
+      s.loggedIn ? btn('Sair', async () => { await api.invoke('claude:signout'); await render(); }, 'quiet') :
+      btn('Entrar no Claude', async () => {
+        state.textContent = 'Abrindo o login do Claude…';
         const r = await api.invoke('claude:signin');
-        if (!r.ok) { state.textContent = r.detail ?? 'Couldn’t start sign-in.'; return; }
-        state.textContent = 'Sign in in your browser, then paste the code it shows you here.';
-        const code = h('input', { type: 'text', placeholder: 'Paste code', autocomplete: 'off', spellcheck: false, 'aria-label': 'Claude sign-in code' }) as HTMLInputElement;
-        const submit = btn('Connect', async () => {
+        if (!r.ok) { state.textContent = r.detail ?? 'Não deu para iniciar o login.'; return; }
+        state.textContent = 'Faça login no navegador e cole aqui o código que aparecer.';
+        const code = h('input', { type: 'text', placeholder: 'Cole o código', autocomplete: 'off', spellcheck: false, 'aria-label': 'Código de login do Claude' }) as HTMLInputElement;
+        const submit = btn('Conectar', async () => {
           if (!code.value.trim()) { code.focus(); return; }
-          state.textContent = 'Connecting…';
+          state.textContent = 'Conectando…';
           const s = await api.invoke('claude:code', code.value.trim());
-          if (s.loggedIn) { toast('Signed in to Claude'); go('model'); }
-          else { state.textContent = s.detail === 'Not signed in.' ? 'That code didn’t work. Click Sign in to try again.' : s.detail; await render(); }
+          if (s.loggedIn) { toast('Conectada ao Claude'); go('model'); }
+          else { state.textContent = s.detail === 'Não conectado.' ? 'Esse código não funcionou. Clique em Entrar para tentar de novo.' : s.detail; await render(); }
         }, 'primary');
         code.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit.click(); });
         actions.replaceChildren(code, submit);
@@ -322,8 +322,8 @@ function claudeAccountFields() {
   };
   void render();
   return h('div', {},
-    field('Account', h('span', { class: 'row' }, state, actions)),
-    field('Model', select('ai.claude.model', 'Claude model', [['sonnet', 'Sonnet'], ['opus', 'Opus'], ['haiku', 'Haiku']])));
+    field('Conta', h('span', { class: 'row' }, state, actions)),
+    field('Modelo', select('ai.claude.model', 'Modelo do Claude', [['sonnet', 'Sonnet'], ['opus', 'Opus'], ['haiku', 'Haiku']])));
 }
 
 async function renderModel() {
@@ -333,82 +333,83 @@ async function renderModel() {
   const result = h('div', { class: 'sub' });
   const datalist = h('datalist', { id: 'models' });
   const keyField = (key: 'gemini' | 'openai' | 'anthropic', label: string) => {
-    const input = h('input', { type: 'password', placeholder: secretStatus[key] ? 'Saved' : 'Paste key', autocomplete: 'off', spellcheck: false, 'aria-label': label });
+    const input = h('input', { type: 'password', placeholder: secretStatus[key] ? 'Salva' : 'Cole a chave', autocomplete: 'off', spellcheck: false, 'aria-label': label });
     return field(label, h('span', { class: 'row' }, input,
-      btn('Save', async () => { if (!input.value.trim()) return; try { await api.invoke('secrets:set', { key, value: input.value.trim() }); input.value = ''; toast('Key saved'); go('model'); } catch (e) { result.textContent = (e as Error).message; } }),
-      secretStatus[key] ? btn('Remove', async () => { await api.invoke('secrets:delete', key); go(tab); }, 'danger') : null),
-      secretStatus._persistent ? undefined : 'Encryption unavailable: kept for this session only.');
+      btn('Salvar', async () => { if (!input.value.trim()) return; try { await api.invoke('secrets:set', { key, value: input.value.trim() }); input.value = ''; toast('Chave salva'); go('model'); } catch (e) { result.textContent = (e as Error).message; } }),
+      secretStatus[key] ? btn('Remover', async () => { await api.invoke('secrets:delete', key); go(tab); }, 'danger') : null),
+      secretStatus._persistent ? undefined : 'Criptografia indisponível: a chave fica só nesta sessão.');
   };
   connBody = h('div', {});
   refreshConn();
   const prov = S.ai.provider;
   sc.append(
-    group('Connection', connBody, h('div', { class: 'row' },
-      btn('Check', async () => { conn = await api.invoke('connection:check'); renderConn(); refreshConn(); }, '', 'refresh'),
-      btn('Test', async () => { result.textContent = 'Testing…'; const r = await api.invoke('provider:test'); result.textContent = `${r.ok ? 'OK' : 'Failed'}: ${r.detail}${r.latencyMs !== undefined ? ` · ${r.latencyMs} ms` : ''}`; const list = await api.invoke('provider:models'); datalist.replaceChildren(...list.map((m) => h('option', { value: m }))); })),
+    group('Conexão', connBody, h('div', { class: 'row' },
+      btn('Verificar', async () => { conn = await api.invoke('connection:check'); renderConn(); refreshConn(); }, '', 'refresh'),
+      btn('Testar', async () => { result.textContent = 'Testando…'; const r = await api.invoke('provider:test'); result.textContent = `${r.ok ? 'OK' : 'Falhou'}: ${r.detail}${r.latencyMs !== undefined ? ` · ${r.latencyMs} ms` : ''}`; const list = await api.invoke('provider:models'); datalist.replaceChildren(...list.map((m) => h('option', { value: m }))); })),
     result, datalist),
-    group('Provider',
-      field('Provider', select('ai.provider', 'Provider', [['claude', 'Claude (your account)'], ['gemini', 'Google Gemini'], ['ollama', 'Ollama'], ['openai', 'OpenAI-compatible'], ['anthropic', 'Anthropic'], ['offline', 'None (offline commands)']], () => go('model'))),
+    group('Provedor',
+      field('Provedor', select('ai.provider', 'Provedor', [['claude', 'Claude (sua conta)'], ['gemini', 'Google Gemini'], ['ollama', 'Ollama (local)'], ['openai', 'Compatível com OpenAI'], ['anthropic', 'Anthropic'], ['offline', 'Nenhum (só comandos)']], () => go('model'))),
       prov === 'gemini' ? h('div', {},
-        field('Model', text('ai.gemini.model', 'Model', 'gemini-3.5-flash-lite', 'models')),
-        field('Fallback', text('ai.gemini.fallbackModel', 'Fallback model', 'none', 'models')),
-        field('Thinking', select('ai.gemini.thinkingLevel', 'Thinking', [['minimal', 'Minimal'], ['low', 'Low'], ['medium', 'Medium'], ['high', 'High']])),
-        keyField('gemini', 'API key')) : null,
+        field('Modelo', text('ai.gemini.model', 'Modelo', 'gemini-3.5-flash-lite', 'models')),
+        field('Reserva', text('ai.gemini.fallbackModel', 'Modelo reserva', 'nenhum', 'models')),
+        field('Raciocínio', select('ai.gemini.thinkingLevel', 'Raciocínio', [['minimal', 'Mínimo'], ['low', 'Baixo'], ['medium', 'Médio'], ['high', 'Alto']])),
+        keyField('gemini', 'Chave de API')) : null,
       prov === 'claude' ? claudeAccountFields() : null,
-      prov === 'ollama' ? h('div', {}, field('Server', text('ai.ollama.baseUrl', 'Server URL')), field('Model', text('ai.ollama.model', 'Model', 'llama3.2', 'models'))) : null,
-      prov === 'openai' ? h('div', {}, field('Base URL', text('ai.openai.baseUrl', 'Base URL')), field('Model', text('ai.openai.model', 'Model', 'gpt-4o-mini', 'models')), keyField('openai', 'API key')) : null,
-      prov === 'anthropic' ? h('div', {}, field('Base URL', text('ai.anthropic.baseUrl', 'Base URL')), field('Model', text('ai.anthropic.model', 'Model', 'claude-haiku-5-5', 'models')), keyField('anthropic', 'API key')) : null,
+      prov === 'ollama' ? h('div', {}, field('Servidor', text('ai.ollama.baseUrl', 'URL do servidor')), field('Modelo', text('ai.ollama.model', 'Modelo', 'llama3.2', 'models'))) : null,
+      prov === 'openai' ? h('div', {}, field('URL base', text('ai.openai.baseUrl', 'URL base')), field('Modelo', text('ai.openai.model', 'Modelo', 'gpt-4o-mini', 'models')), keyField('openai', 'Chave de API')) : null,
+      prov === 'anthropic' ? h('div', {}, field('URL base', text('ai.anthropic.baseUrl', 'URL base')), field('Modelo', text('ai.anthropic.model', 'Modelo', 'claude-haiku-5-5', 'models')), keyField('anthropic', 'Chave de API')) : null,
     ),
-    group('Replies',
-      field('Length', select('ai.responseLength', 'Reply length', [['short', 'Short'], ['medium', 'Medium'], ['long', 'Long']])),
-      prov !== 'gemini' ? field('Creativity', range('ai.temperature', 'Creativity', 0, 1.5, 0.05)) : null,
-      field('Max tokens', num('ai.maxTokens', 'Max tokens', 32, 8192)),
-      field('Context turns', num('ai.historyTurns', 'Context turns', 0, 100)),
-      field('Timeout (s)', num('ai.requestTimeoutSec', 'Timeout', 5, 600))),
+    group('Respostas',
+      field('Tamanho', select('ai.responseLength', 'Tamanho da resposta', [['short', 'Curta'], ['medium', 'Média'], ['long', 'Longa']])),
+      prov !== 'gemini' ? field('Criatividade', range('ai.temperature', 'Criatividade', 0, 1.5, 0.05)) : null,
+      field('Máx. de tokens', num('ai.maxTokens', 'Máx. de tokens', 32, 8192)),
+      field('Turnos de contexto', num('ai.historyTurns', 'Turnos de contexto', 0, 100)),
+      field('Tempo limite (s)', num('ai.requestTimeoutSec', 'Tempo limite', 5, 600))),
   );
-  view.append(viewHead('Model'), sc);
+  view.append(viewHead('Modelo'), sc);
 }
 
 // ---------------------------------------------------------------- voice
 async function renderVoice() {
   secretStatus = await api.invoke('secrets:status');
   const sc = h('div', { class: 'scroll' });
-  const voiceSel = h('select', { 'aria-label': 'Voice', onchange: (e: Event) => void save('voice.systemVoice', (e.target as HTMLSelectElement).value) });
+  const voiceSel = h('select', { 'aria-label': 'Voz', onchange: (e: Event) => void save('voice.systemVoice', (e.target as HTMLSelectElement).value) });
   const fillVoices = () => {
     const vs = speechSynthesis.getVoices();
-    voiceSel.replaceChildren(h('option', { value: '' }, 'Automatic'), ...vs.map((v) => h('option', { value: v.name, selected: v.name === S.voice.systemVoice }, v.name)));
+    voiceSel.replaceChildren(h('option', { value: '' }, 'Automática'), ...vs.map((v) => h('option', { value: v.name, selected: v.name === S.voice.systemVoice }, v.name)));
   };
   fillVoices();
   speechSynthesis.onvoiceschanged = fillVoices;
   const testVoice = () => {
-    const u = new SpeechSynthesisUtterance('Hey, choom.');
+    const u = new SpeechSynthesisUtterance('E aí, choom.');
+    u.lang = 'pt-BR';
     const v = speechSynthesis.getVoices().find((x) => x.name === S.voice.systemVoice);
     if (v) u.voice = v;
     u.rate = S.voice.rate; u.pitch = S.voice.pitch; u.volume = S.voice.volume;
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   };
-  const keyIn = h('input', { type: 'password', placeholder: secretStatus.openaiVoice ? 'Saved' : 'Optional', autocomplete: 'off', 'aria-label': 'Voice API key' });
+  const keyIn = h('input', { type: 'password', placeholder: secretStatus.openaiVoice ? 'Salva' : 'Opcional', autocomplete: 'off', 'aria-label': 'Chave de API de voz' });
   sc.append(
-    group('Microphone',
-      sw('Allow microphone', 'voice.micPermission', () => go('voice')),
-      field('Speech to text', select('voice.sttEngine', 'Speech to text', [['windows', 'Windows (on-device)'], ['openai', 'Whisper-compatible']], () => go('voice'))),
-      S.voice.sttEngine === 'openai' ? h('div', {}, field('Endpoint', text('voice.openaiStt.baseUrl', 'Speech to text endpoint')), field('Model', text('voice.openaiStt.model', 'Speech to text model'))) : null,
-      field('Wake word “Hey Capri”', toggle('voice.wakeWord', 'Wake word'), S.voice.micPermission ? undefined : 'Needs the microphone.'),
+    group('Microfone',
+      sw('Permitir microfone', 'voice.micPermission', () => go('voice')),
+      field('Fala para texto', select('voice.sttEngine', 'Fala para texto', [['windows', 'Windows (no aparelho, só inglês)'], ['openai', 'Compatível com Whisper (recomendado p/ PT)']], () => go('voice'))),
+      S.voice.sttEngine === 'openai' ? h('div', {}, field('Endpoint', text('voice.openaiStt.baseUrl', 'Endpoint de fala para texto')), field('Modelo', text('voice.openaiStt.model', 'Modelo de fala para texto'))) : null,
+      field('Palavra de ativação “Ei Capri”', toggle('voice.wakeWord', 'Palavra de ativação'), S.voice.micPermission ? undefined : 'Precisa do microfone.'),
     ),
-    group('Speech',
-      sw('Speak replies', 'voice.ttsEnabled'),
-      field('Engine', select('voice.ttsEngine', 'Speech engine', [['system', 'Windows voices'], ['openai', 'OpenAI-compatible']], () => go('voice'))),
-      S.voice.ttsEngine === 'system' ? field('Voice', h('span', { class: 'row' }, voiceSel, btn('Test', testVoice))) : h('div', {},
-        field('Endpoint', text('voice.openaiTts.baseUrl', 'Speech endpoint')), field('Model', text('voice.openaiTts.model', 'Speech model')), field('Voice', text('voice.openaiTts.voice', 'Voice name'))),
-      field('Rate', range('voice.rate', 'Rate', 0.5, 2, 0.05)),
-      field('Pitch', range('voice.pitch', 'Pitch', 0, 2, 0.05)),
+    group('Fala',
+      sw('Falar as respostas', 'voice.ttsEnabled'),
+      field('Mecanismo', select('voice.ttsEngine', 'Mecanismo de fala', [['system', 'Vozes do Windows'], ['openai', 'Compatível com OpenAI']], () => go('voice'))),
+      S.voice.ttsEngine === 'system' ? field('Voz', h('span', { class: 'row' }, voiceSel, btn('Testar', testVoice))) : h('div', {},
+        field('Endpoint', text('voice.openaiTts.baseUrl', 'Endpoint de fala')), field('Modelo', text('voice.openaiTts.model', 'Modelo de fala')), field('Voz', text('voice.openaiTts.voice', 'Nome da voz'))),
+      field('Velocidade', range('voice.rate', 'Velocidade', 0.5, 2, 0.05)),
+      field('Tom', range('voice.pitch', 'Tom', 0, 2, 0.05)),
       field('Volume', range('voice.volume', 'Volume', 0, 1, 0.05, pct)),
     ),
-    (S.voice.ttsEngine === 'openai' || S.voice.sttEngine === 'openai') ? group('Voice API key',
-      field('Key', h('span', { class: 'row' }, keyIn, btn('Save', async () => { if (keyIn.value.trim()) { await api.invoke('secrets:set', { key: 'openaiVoice', value: keyIn.value.trim() }); go('voice'); } }),
-        secretStatus.openaiVoice ? btn('Remove', async () => { await api.invoke('secrets:delete', 'openaiVoice'); go('voice'); }, 'danger') : null))) : '',
+    (S.voice.ttsEngine === 'openai' || S.voice.sttEngine === 'openai') ? group('Chave de API de voz',
+      field('Chave', h('span', { class: 'row' }, keyIn, btn('Salvar', async () => { if (keyIn.value.trim()) { await api.invoke('secrets:set', { key: 'openaiVoice', value: keyIn.value.trim() }); go('voice'); } }),
+        secretStatus.openaiVoice ? btn('Remover', async () => { await api.invoke('secrets:delete', 'openaiVoice'); go('voice'); }, 'danger') : null))) : '',
   );
-  view.append(viewHead('Voice'), sc);
+  view.append(viewHead('Voz'), sc);
 }
 
 // ---------------------------------------------------------------- character: appearance, behavior, movement
@@ -418,144 +419,145 @@ async function renderCharacter() {
   const sc = h('div', { class: 'scroll' });
   const tp = (where: string, label: string) => btn(label, async () => { const r = await api.invoke('teleport:now', where); if (!r.ok) toast(r.detail, true); }, '', 'teleport');
   sc.append(
-    group('Appearance',
-      field('Size', range('character.scale', 'Size', 0.4, 2.5, 0.05, pct)),
-      field('Opacity', range('character.opacity', 'Opacity', 0.2, 1, 0.05, pct)),
-      field('Animation', range('character.animationIntensity', 'Animation intensity', 0, 1.5, 0.05, pct)),
-      field('Frame rate', select('character.fpsCap', 'Frame rate', [['15', '15 fps'], ['30', '30 fps'], ['60', '60 fps'], ['120', '120 fps']], undefined, Number)),
-      sw('Glitch effects', 'character.glitchEffects')),
-    group('On the desktop',
-      sw('Always on top', 'character.alwaysOnTop'),
-      field('Click-through', toggle('character.clickThrough', 'Click-through'), 'Ctrl+Alt+C to interact for 15 s.'),
-      sw('Hide for fullscreen apps', 'character.hideOnFullscreen'),
-      field('Position', btn('Reset', () => save('character.position', null)))),
-    group('Movement',
-      field('Teleport now', h('span', { class: 'row' }, tp('auto', 'Anywhere'), tp('near_cursor', 'To cursor'), tp('perch', 'On window')), undefined, true),
-      field('Teleport on her own', toggle('teleport.auto', 'Teleport on her own'), t.auto ? (t.armed ? `Next in ${t.nextInSec !== null ? Math.max(1, Math.ceil(t.nextInSec / 60)) : '—'} min` : `Waiting: ${t.blockedReason ?? 'AI offline'}`) : undefined),
-      field('Every (minutes)', h('span', { class: 'row' }, num('teleport.minMinutes', 'Minimum minutes', 1, 240), h('span', { class: 'sub' }, 'to'), num('teleport.maxMinutes', 'Maximum minutes', 1, 480))),
-      sw('Avoid the active window', 'teleport.avoidActiveWindow'),
-      sw('Teleport effects', 'teleport.effects')),
-    group('Behavior',
-      sw('Do not disturb', 'behavior.doNotDisturb'),
-      field('Sleep after (minutes)', num('behavior.sleepAfterMinutes', 'Sleep after', 1, 240)),
-      sw('Quiet hours', 'behavior.quietHours.enabled'),
-      field('From', h('span', { class: 'row' }, timeIn('behavior.quietHours.start', 'Quiet hours start'), h('span', { class: 'sub' }, 'to'), timeIn('behavior.quietHours.end', 'Quiet hours end'))),
-      sw('Idle remarks', 'behavior.idleRemarks'),
-      S.behavior.idleRemarks ? sw('Say remarks out loud', 'behavior.proactiveVoice') : null,
-      S.behavior.idleRemarks ? field('Remark every (minutes)', num('behavior.remarkIntervalMinutes', 'Remark interval', 5, 480)) : null,
-      sw('Explore on her own while I’m away', 'behavior.explore'),
-      S.behavior.explore ? field('After I’m idle for (minutes)', num('behavior.exploreAfterMinutes', 'Explore after', 2, 120)) : null),
+    group('Aparência',
+      field('Tamanho', range('character.scale', 'Tamanho', 0.4, 2.5, 0.05, pct)),
+      field('Opacidade', range('character.opacity', 'Opacidade', 0.2, 1, 0.05, pct)),
+      field('Animação', range('character.animationIntensity', 'Intensidade da animação', 0, 1.5, 0.05, pct)),
+      field('Taxa de quadros', select('character.fpsCap', 'Taxa de quadros', [['15', '15 fps'], ['30', '30 fps'], ['60', '60 fps'], ['120', '120 fps']], undefined, Number)),
+      sw('Efeitos de glitch', 'character.glitchEffects')),
+    group('Na área de trabalho',
+      sw('Sempre no topo', 'character.alwaysOnTop'),
+      field('Clique atravessa', toggle('character.clickThrough', 'Clique atravessa'), 'Ctrl+Alt+C para interagir por 15 s.'),
+      sw('Esconder em apps em tela cheia', 'character.hideOnFullscreen'),
+      field('Posição', btn('Redefinir', () => save('character.position', null)))),
+    group('Movimento',
+      field('Teletransportar agora', h('span', { class: 'row' }, tp('auto', 'Qualquer lugar'), tp('near_cursor', 'Até o cursor'), tp('perch', 'Na janela')), undefined, true),
+      field('Teletransportar sozinha', toggle('teleport.auto', 'Teletransportar sozinha'), t.auto ? (t.armed ? `Próximo em ${t.nextInSec !== null ? Math.max(1, Math.ceil(t.nextInSec / 60)) : '—'} min` : `Aguardando: ${t.blockedReason ?? 'IA offline'}`) : undefined),
+      field('A cada (minutos)', h('span', { class: 'row' }, num('teleport.minMinutes', 'Mínimo de minutos', 1, 240), h('span', { class: 'sub' }, 'a'), num('teleport.maxMinutes', 'Máximo de minutos', 1, 480))),
+      sw('Evitar a janela ativa', 'teleport.avoidActiveWindow'),
+      sw('Efeitos de teletransporte', 'teleport.effects')),
+    group('Comportamento',
+      sw('Não perturbe', 'behavior.doNotDisturb'),
+      field('Dormir depois de (minutos)', num('behavior.sleepAfterMinutes', 'Dormir depois de', 1, 240)),
+      sw('Horário de silêncio', 'behavior.quietHours.enabled'),
+      field('Das', h('span', { class: 'row' }, timeIn('behavior.quietHours.start', 'Início do silêncio'), h('span', { class: 'sub' }, 'às'), timeIn('behavior.quietHours.end', 'Fim do silêncio'))),
+      sw('Comentários quando ociosa', 'behavior.idleRemarks'),
+      S.behavior.idleRemarks ? sw('Falar os comentários em voz alta', 'behavior.proactiveVoice') : null,
+      S.behavior.idleRemarks ? field('Comentar a cada (minutos)', num('behavior.remarkIntervalMinutes', 'Intervalo dos comentários', 5, 480)) : null,
+      sw('Explorar sozinha enquanto eu estiver fora', 'behavior.explore'),
+      S.behavior.explore ? field('Depois de eu ficar parado por (minutos)', num('behavior.exploreAfterMinutes', 'Explorar depois de', 2, 120)) : null),
   );
-  view.append(viewHead('Character'), sc);
+  view.append(viewHead('Personagem'), sc);
 }
 
 // ---------------------------------------------------------------- memory
 async function renderMemory() {
   const [mem, notes, rems] = await Promise.all([api.invoke('memory:list'), api.invoke('notes:list'), api.invoke('reminders:list')]);
   const sc = h('div', { class: 'scroll' });
-  const add = h('input', { type: 'text', placeholder: 'Something to remember', maxLength: 300, 'aria-label': 'New memory', style: 'flex:1;width:auto' });
+  const add = h('input', { type: 'text', placeholder: 'Algo para lembrar', maxLength: 300, 'aria-label': 'Nova memória', style: 'flex:1;width:auto' });
   const memItem = (m: MemoryItem) => h('div', { class: 'item' },
-    h('div', { class: 'txt' }, m.text, h('div', { class: 'sub' }, `${m.source === 'model' ? 'Suggested by Capri' : 'Added by you'} · ${new Date(m.createdAt).toLocaleDateString()}`)),
-    m.status === 'pending' ? btn('Approve', () => api.invoke('memory:approve', m.id).then(() => go('memory')), 'primary') : null,
-    btn('Delete', () => api.invoke('memory:delete', m.id).then(() => go('memory')), 'quiet'));
+    h('div', { class: 'txt' }, m.text, h('div', { class: 'sub' }, `${m.source === 'model' ? 'Sugerida pela Capri' : 'Adicionada por você'} · ${new Date(m.createdAt).toLocaleDateString('pt-BR')}`)),
+    m.status === 'pending' ? btn('Aprovar', () => api.invoke('memory:approve', m.id).then(() => go('memory')), 'primary') : null,
+    btn('Excluir', () => api.invoke('memory:delete', m.id).then(() => go('memory')), 'quiet'));
   sc.append(
-    group('Long-term',
-      sw('Use in conversations', 'memory.enabled'),
-      h('div', { class: 'list' }, ...mem.map(memItem), mem.length ? null : emptyLine('Nothing yet.')),
+    group('Longo prazo',
+      sw('Usar nas conversas', 'memory.enabled'),
+      h('div', { class: 'list' }, ...mem.map(memItem), mem.length ? null : emptyLine('Nada ainda.')),
       h('div', { class: 'row', style: 'margin:8px 0' }, add,
-        btn('Add', async () => { if (add.value.trim()) { try { await api.invoke('memory:add', add.value.trim()); go('memory'); } catch (e) { toast((e as Error).message, true); } } }, '', 'plus'),
-        mem.length ? btn('Forget all', async () => { if (confirm('Delete all memories?')) { await api.invoke('memory:clear'); go('memory'); } }, 'danger') : null)),
-    group('History',
-      sw('Save conversations', 'privacy.saveHistory'),
-      field('Keep for (days, 0 = always)', num('memory.historyRetentionDays', 'Keep history for days', 0, 3650)),
-      field('Clear', btn('Clear history', async () => { if (confirm('Delete all conversation history?')) { await api.invoke('chat:clear'); toast('History cleared'); } }, 'danger', 'trash'))),
-    group('Notes', h('div', { class: 'list' }, ...notes.map((n: Note) => h('div', { class: 'item' },
+        btn('Adicionar', async () => { if (add.value.trim()) { try { await api.invoke('memory:add', add.value.trim()); go('memory'); } catch (e) { toast((e as Error).message, true); } } }, '', 'plus'),
+        mem.length ? btn('Esquecer tudo', async () => { if (confirm('Apagar todas as memórias?')) { await api.invoke('memory:clear'); go('memory'); } }, 'danger') : null)),
+    group('Histórico',
+      sw('Salvar conversas', 'privacy.saveHistory'),
+      field('Guardar por (dias, 0 = sempre)', num('memory.historyRetentionDays', 'Dias para guardar o histórico', 0, 3650)),
+      field('Limpar', btn('Limpar histórico', async () => { if (confirm('Apagar todo o histórico de conversas?')) { await api.invoke('chat:clear'); toast('Histórico apagado'); } }, 'danger', 'trash'))),
+    group('Notas', h('div', { class: 'list' }, ...notes.map((n: Note) => h('div', { class: 'item' },
       h('div', { class: 'txt' }, n.title, h('div', { class: 'sub' }, n.body.slice(0, 200))),
-      btn('Delete', () => api.invoke('notes:delete', n.id).then(() => go('memory')), 'quiet'))), notes.length ? null : emptyLine('No notes.'))),
-    group('Timers and reminders', h('div', { class: 'list' }, ...rems.map((r: Reminder) => h('div', { class: 'item' },
-      h('div', { class: 'txt' }, r.text, h('div', { class: 'sub' }, `${r.kind === 'timer' ? 'Timer' : 'Reminder'} · ${new Date(r.dueAt).toLocaleString()}`)),
-      r.fired ? h('span', { class: 'tag ok' }, 'done') : btn('Cancel', () => api.invoke('reminders:cancel', r.id).then(() => go('memory')), 'quiet'))), rems.length ? null : emptyLine('None.'))),
+      btn('Excluir', () => api.invoke('notes:delete', n.id).then(() => go('memory')), 'quiet'))), notes.length ? null : emptyLine('Nenhuma nota.'))),
+    group('Timers e lembretes', h('div', { class: 'list' }, ...rems.map((r: Reminder) => h('div', { class: 'item' },
+      h('div', { class: 'txt' }, r.text, h('div', { class: 'sub' }, `${r.kind === 'timer' ? 'Timer' : 'Lembrete'} · ${new Date(r.dueAt).toLocaleString('pt-BR')}`)),
+      r.fired ? h('span', { class: 'tag ok' }, 'concluído') : btn('Cancelar', () => api.invoke('reminders:cancel', r.id).then(() => go('memory')), 'quiet'))), rems.length ? null : emptyLine('None.'))),
   );
-  view.append(viewHead('Memory'), sc);
+  view.append(viewHead('Memória'), sc);
 }
 
 // ---------------------------------------------------------------- privacy: permissions + data
 const TOOL_INFO: Record<ToolName, string> = {
-  open_url: 'Open web pages', launch_app: 'Launch approved apps', search_files: 'Search file names',
-  create_note: 'Save notes', list_notes: 'Read notes', set_reminder: 'Set reminders', start_timer: 'Start timers', cancel_timer: 'Cancel timers',
-  get_time: 'Check the time', remember: 'Remember facts', teleport: 'Teleport on request', emote: 'Expressions',
-  read_screen: 'Read your screen', study_timer: 'Study timers', mischief: 'Pranks on request', use_computer: 'Use your computer',
+  open_url: 'Abrir páginas da web', launch_app: 'Abrir apps aprovados', search_files: 'Buscar nomes de arquivos',
+  create_note: 'Salvar notas', list_notes: 'Ler notas', set_reminder: 'Criar lembretes', start_timer: 'Iniciar timers', cancel_timer: 'Cancelar timers',
+  get_time: 'Ver as horas', remember: 'Lembrar fatos', teleport: 'Teletransportar quando pedido', emote: 'Expressões',
+  read_screen: 'Ler sua tela', study_timer: 'Timers de estudo', mischief: 'Pegadinhas quando pedido', use_computer: 'Usar seu computador',
 };
 async function renderPrivacy() {
   const d = await api.invoke('diagnostics:get');
   const sc = h('div', { class: 'scroll' });
-  const pol = (t: ToolName) => select(`actions.policies.${t}`, TOOL_INFO[t], [['allow', 'Allow'], ['confirm', 'Ask first'], ['deny', 'Never']]);
+  const pol = (t: ToolName) => select(`actions.policies.${t}`, TOOL_INFO[t], [['allow', 'Permitir'], ['confirm', 'Perguntar antes'], ['deny', 'Nunca']]);
   sc.append(
-    group('What Capri may do', ...TOOL_NAMES.map((t) => field(TOOL_INFO[t], pol(t)))),
-    group('Approved apps',
+    group('O que a Capri pode fazer', ...TOOL_NAMES.map((t) => field(TOOL_INFO[t], pol(t)))),
+    group('Apps aprovados',
       h('div', { class: 'list' }, ...S.actions.approvedApps.map((a, i) => h('div', { class: 'item' }, h('div', { class: 'txt' }, a.name, h('div', { class: 'sub mono' }, a.path)),
-        btn('Remove', () => save('actions.approvedApps', S.actions.approvedApps.filter((_, j) => j !== i)).then(() => go('privacy')), 'quiet'))),
+        btn('Remover', () => save('actions.approvedApps', S.actions.approvedApps.filter((_, j) => j !== i)).then(() => go('privacy')), 'quiet'))),
         S.actions.approvedApps.length ? null : emptyLine('None.')),
-      h('div', { class: 'row', style: 'margin:8px 0' }, btn('Add app', async () => {
+      h('div', { class: 'row', style: 'margin:8px 0' }, btn('Adicionar app', async () => {
         const a = await api.invoke('apps:pick');
         if (a) { await save('actions.approvedApps', [...S.actions.approvedApps, a]); go('privacy'); }
       }, '', 'plus'))),
-    group('Search folders',
+    group('Pastas de busca',
       h('div', { class: 'list' }, ...S.actions.searchRoots.map((r, i) => h('div', { class: 'item' }, h('div', { class: 'txt mono' }, r),
-        btn('Remove', () => save('actions.searchRoots', S.actions.searchRoots.filter((_, j) => j !== i)).then(() => go('privacy')), 'quiet'))),
+        btn('Remover', () => save('actions.searchRoots', S.actions.searchRoots.filter((_, j) => j !== i)).then(() => go('privacy')), 'quiet'))),
         S.actions.searchRoots.length ? null : emptyLine('None.')),
-      h('div', { class: 'row', style: 'margin:8px 0' }, btn('Add folder', async () => {
+      h('div', { class: 'row', style: 'margin:8px 0' }, btn('Adicionar pasta', async () => {
         const f = await api.invoke('folders:pick');
         if (f && !S.actions.searchRoots.includes(f)) { await save('actions.searchRoots', [...S.actions.searchRoots, f]); go('privacy'); }
       }, '', 'folder'))),
-    group('Your data',
+    group('Seus dados',
       h('dl', { class: 'kv' },
-        h('dt', {}, 'Location'), h('dd', { class: 'mono' }, d.userData),
-        h('dt', {}, 'API keys'), h('dd', {}, d.safeStorage ? 'Encrypted (Windows DPAPI)' : 'Memory only'),
-        h('dt', {}, 'Audio'), h('dd', {}, 'Never stored'),
-        h('dt', {}, 'Telemetry'), h('dd', {}, 'None')),
-      field('Log level', select('privacy.logLevel', 'Log level', [['error', 'Errors'], ['warn', 'Warnings'], ['info', 'Normal'], ['debug', 'Debug']])),
-      h('div', { class: 'row', style: 'margin:8px 0' }, btn('Open folder', () => api.invoke('app:openDataFolder'), '', 'folder'),
-        btn('Delete all data', async () => {
-          if (confirm('Delete all Capri data (settings, keys, history, memory, notes)? This cannot be undone.') && confirm('Really delete everything?')) await api.invoke('app:resetAll');
+        h('dt', {}, 'Local'), h('dd', { class: 'mono' }, d.userData),
+        h('dt', {}, 'Chaves de API'), h('dd', {}, d.safeStorage ? 'Criptografadas (DPAPI do Windows)' : 'Só na memória'),
+        h('dt', {}, 'Áudio'), h('dd', {}, 'Nunca é guardado'),
+        h('dt', {}, 'Telemetria'), h('dd', {}, 'Nenhuma')),
+      field('Nível de log', select('privacy.logLevel', 'Nível de log', [['error', 'Erros'], ['warn', 'Avisos'], ['info', 'Normal'], ['debug', 'Depuração']])),
+      h('div', { class: 'row', style: 'margin:8px 0' }, btn('Abrir pasta', () => api.invoke('app:openDataFolder'), '', 'folder'),
+        btn('Apagar todos os dados', async () => {
+          if (confirm('Apagar todos os dados da Capri (configurações, chaves, histórico, memória, notas)? Não dá para desfazer.') && confirm('Apagar tudo mesmo?')) await api.invoke('app:resetAll');
         }, 'danger', 'trash'))),
   );
-  view.append(viewHead('Privacy'), sc);
+  view.append(viewHead('Privacidade'), sc);
 }
 
 // ---------------------------------------------------------------- system: startup, shortcuts, health, logs
 async function renderSystem() {
   const sc = h('div', { class: 'scroll' });
-  view.append(viewHead('System'), sc);
+  view.append(viewHead('Sistema'), sc);
   sc.append(
-    group('Startup',
-      sw('Launch at sign-in', 'startup.launchOnLogin'),
-      sw('Reminder notifications', 'notifications.reminders'),
-      sw('Notification sound', 'notifications.sound')),
-    group('Shortcuts', ...([['Open chat', 'Ctrl+Alt+Space'], ['Push to talk', 'Ctrl+Alt+T'], ['Teleport', 'Ctrl+Alt+P'], ['Stop', 'Ctrl+Alt+X'], ['Hide / show', 'Ctrl+Alt+H'], ['Interact (click-through)', 'Ctrl+Alt+C']] as const)
+    group('Inicialização',
+      sw('Abrir ao entrar no Windows', 'startup.launchOnLogin'),
+      sw('Notificações de lembretes', 'notifications.reminders'),
+      sw('Som das notificações', 'notifications.sound')),
+    group('Atalhos', ...([['Abrir chat', 'Ctrl+Alt+Space'], ['Apertar para falar', 'Ctrl+Alt+T'], ['Teletransportar', 'Ctrl+Alt+P'], ['Parar', 'Ctrl+Alt+X'], ['Esconder / mostrar', 'Ctrl+Alt+H'], ['Interagir (clique atravessa)', 'Ctrl+Alt+C']] as const)
       .map(([d, k]) => field(d, h('span', { class: 'kbd' }, k)))),
   );
-  const health = group('Health', emptyLine('Checking…'));
+  const health = group('Saúde', emptyLine('Verificando…'));
   const logs = h('div', { class: 'logs' });
   sc.append(health, group('Logs', logs, h('div', { class: 'row', style: 'margin:8px 0' },
-    btn('Refresh', () => loadLogs(), '', 'refresh'), btn('Copy', () => navigator.clipboard.writeText(logs.textContent ?? '').then(() => toast('Copied'))),
-    btn('Restart', () => api.invoke('app:restart')), btn('Quit Capri', () => api.invoke('app:quit'), 'danger'))));
+    btn('Atualizar', () => loadLogs(), '', 'refresh'), btn('Copiar', () => navigator.clipboard.writeText(logs.textContent ?? '').then(() => toast('Copiado'))),
+    btn('Reiniciar', () => api.invoke('app:restart')), btn('Fechar a Capri', () => api.invoke('app:quit'), 'danger'))));
   const loadLogs = async () => { logs.textContent = (await api.invoke('logs:tail', 200)).join('\n'); logs.scrollTop = logs.scrollHeight; };
   let d: Diagnostics;
-  try { d = await api.invoke('diagnostics:get'); } catch (e) { health.replaceChildren(h('span', { class: 'label' }, 'Health'), h('div', { class: 'err-text' }, (e as Error).message)); return; }
+  try { d = await api.invoke('diagnostics:get'); } catch (e) { health.replaceChildren(h('span', { class: 'label' }, 'Saúde'), h('div', { class: 'err-text' }, (e as Error).message)); return; }
   const ok = (b: boolean, t: string) => h('span', { class: `tag ${b ? 'ok' : 'bad'}` }, t);
-  health.replaceChildren(h('span', { class: 'label' }, 'Health'), h('dl', { class: 'kv' },
-    h('dt', {}, 'AI'), h('dd', {}, ok(d.connection.state === 'connected', `${CONN_LABEL[d.connection.state]}${d.connection.state === 'connected' ? '' : ` · ${d.connection.detail}`}`)),
-    h('dt', {}, 'Speech recognizer'), h('dd', {}, ok(d.speechRecognizer.available, d.speechRecognizer.available ? 'Available' : d.speechRecognizer.detail)),
-    h('dt', {}, 'Key storage'), h('dd', {}, ok(d.safeStorage, d.safeStorage ? 'Encrypted' : 'Memory only')),
-    h('dt', {}, 'Fullscreen detection'), h('dd', {}, ok(d.fullscreenWatcher !== 'unavailable', d.fullscreenWatcher)),
-    h('dt', {}, 'Frame rate'), h('dd', { class: 'mono' }, `${d.perf.fps ?? '—'} fps`),
-    h('dt', {}, 'Startup'), h('dd', { class: 'mono' }, `${d.perf.startupMs} ms`),
-    h('dt', {}, 'Memory'), h('dd', { class: 'mono' }, `${d.perf.processes.reduce((s, p) => s + p.memMB, 0)} MB`),
-    h('dt', {}, 'Shortcuts'), h('dd', { class: 'mono' }, Object.entries(d.shortcuts).map(([k, v]) => `${k} ${v}`).join(' · ') || 'Off'),
-    h('dt', {}, 'Last unclean exit'), h('dd', {}, d.lastCrash ?? 'None'),
-    h('dt', {}, 'Version'), h('dd', { class: 'mono' }, `${d.version} · Electron ${d.electron}`),
-    h('dt', {}, 'Displays'), h('dd', { class: 'mono' }, d.displays.map((x) => `${x.bounds.width}×${x.bounds.height} @${Math.round(x.scaleFactor * 100)}%`).join(', '))));
+  health.replaceChildren(h('span', { class: 'label' }, 'Saúde'), h('dl', { class: 'kv' },
+    h('dt', {}, 'IA'), h('dd', {}, ok(d.connection.state === 'connected', `${CONN_LABEL[d.connection.state]}${d.connection.state === 'connected' ? '' : ` · ${d.connection.detail}`}`)),
+    h('dt', {}, 'Reconhecimento de fala'), h('dd', {}, ok(d.speechRecognizer.available, d.speechRecognizer.available ? 'Disponível' : d.speechRecognizer.detail)),
+    h('dt', {}, 'Armazenamento de chaves'), h('dd', {}, ok(d.safeStorage, d.safeStorage ? 'Criptografado' : 'Só na memória')),
+    h('dt', {}, 'Detecção de tela cheia'), h('dd', {}, ok(d.fullscreenWatcher !== 'unavailable', d.fullscreenWatcher)),
+    h('dt', {}, 'Taxa de quadros'), h('dd', { class: 'mono' }, `${d.perf.fps ?? '—'} fps`),
+    h('dt', {}, 'Inicialização'), h('dd', { class: 'mono' }, `${d.perf.startupMs} ms`),
+    h('dt', {}, 'Memória'), h('dd', { class: 'mono' }, `${d.perf.processes.reduce((s, p) => s + p.memMB, 0)} MB`),
+    h('dt', {}, 'Atalhos'), h('dd', { class: 'mono' }, Object.entries(d.shortcuts).map(([k, v]) => `${k} ${v}`).join(' · ') || 'Desligados'),
+    h('dt', {}, 'Último fechamento inesperado'), h('dd', {}, d.lastCrash ?? 'Nenhum'),
+    h('dt', {}, 'Versão'), h('dd', { class: 'mono' }, `${d.version} · Electron ${d.electron}`),
+    h('dt', {}, 'Créditos'), h('dd', {}, 'Versão PT-BR por R3DPR0XY · baseada no Capri Companion (MIT, código aberto)'),
+    h('dt', {}, 'Monitores'), h('dd', { class: 'mono' }, d.displays.map((x) => `${x.bounds.width}×${x.bounds.height} @${Math.round(x.scaleFactor * 100)}%`).join(', '))));
   void loadLogs();
 }
 
@@ -569,12 +571,13 @@ function renderWelcome() {
   const choice = (title: string, sub: string, provider: string) => h('div', { class: 'choice', role: 'button', tabIndex: 0, onclick: () => finish(provider), onkeydown: (e: KeyboardEvent) => { if (e.key === 'Enter') void finish(provider); } },
     h('b', {}, title), h('span', { class: 'sub' }, sub), h('span', { class: 'go' }, '→'));
   view.append(h('div', { class: 'scroll' }, h('div', { class: 'welcome' },
-    h('h2', {}, 'Choose her brain'),
-    choice('Claude', 'Sign in with your Claude account', 'claude'),
-    choice('Google Gemini', 'Needs an API key', 'gemini'),
-    choice('Ollama', 'Local, on this PC', 'ollama'),
-    choice('Other API', 'OpenAI-compatible or Anthropic', 'openai'),
-    choice('No AI', 'Commands only', 'offline'))));
+    h('h2', {}, 'Escolha o cérebro dela'),
+    choice('Claude', 'Entre com a sua conta Claude', 'claude'),
+    choice('Google Gemini', 'Precisa de uma chave de API', 'gemini'),
+    choice('Ollama', 'Local, neste PC (mais privado)', 'ollama'),
+    choice('Outra API', 'Compatível com OpenAI ou Anthropic', 'openai'),
+    choice('Sem IA', 'Só comandos', 'offline'),
+    h('div', { class: 'sub', style: 'margin-top:12px;text-align:center' }, 'Capri PT-BR · versão por R3DPR0XY · projeto de fã não oficial'))));
 }
 
 const RENDER: Record<string, () => unknown> = {

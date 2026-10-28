@@ -108,10 +108,10 @@ export class SentenceChunker {
 /** Strip markdown/code so TTS doesn't read symbols aloud. */
 export function speakable(text: string): string {
   return text
-    .replace(/```[\s\S]*?```/g, ' (code in the chat) ')
+    .replace(/```[\s\S]*?```/g, ' (código no chat) ')
     .replace(/`([^`]+)`/g, '$1')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/https?:\/\/\S+/g, 'the link')
+    .replace(/https?:\/\/\S+/g, 'o link')
     .replace(/[*_#>~|]/g, '')
     .replace(/\s+/g, ' ')
     .trim();

@@ -3,9 +3,12 @@ import { LipSync } from './lipsync';
 
 type Report = (id: string, state: 'start' | 'end' | 'error') => void;
 
-/** Picks a default substitute voice: a female English Windows voice if available. */
+/** Picks a default substitute voice: a female Brazilian Portuguese voice first, then a female English one. */
 export function pickVoice(voices: SpeechSynthesisVoice[], preferred: string): SpeechSynthesisVoice | null {
   if (preferred) { const v = voices.find((x) => x.name === preferred); if (v) return v; }
+  const pt = voices.filter((v) => v.lang.toLowerCase().replace('_', '-').startsWith('pt-br'));
+  const ptPick = pt.find((v) => /maria|francisca|thalita|leticia|female|feminin/i.test(v.name)) ?? pt.find((v) => v.localService) ?? pt[0];
+  if (ptPick) return ptPick;
   const en = voices.filter((v) => v.lang.toLowerCase().startsWith('en'));
   return en.find((v) => /zira|aria|jenny|hazel|susan|eva|female/i.test(v.name)) ?? en.find((v) => v.localService) ?? en[0] ?? voices[0] ?? null;
 }
@@ -58,8 +61,9 @@ export class Speaker {
     return new Promise<void>((resolve, reject) => {
       if (typeof speechSynthesis === 'undefined') return reject(new Error('no speechSynthesis'));
       const u = new SpeechSynthesisUtterance(item.text);
+      u.lang = 'pt-BR';
       const voice = pickVoice(speechSynthesis.getVoices(), v.systemVoice);
-      if (voice) u.voice = voice;
+      if (voice) { u.voice = voice; u.lang = voice.lang; }
       u.rate = v.rate; u.pitch = v.pitch; u.volume = v.volume;
       let done = false;
       const finish = (state: 'end' | 'error') => { if (done) return; done = true; this.audible = false; this.lips.stop(); this.report(item.id, state); state === 'end' ? resolve() : reject(new Error('tts error')); };

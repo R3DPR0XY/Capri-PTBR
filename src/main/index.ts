@@ -36,14 +36,14 @@ const TEST = process.env.CAPRI_TEST === '1';
 if (process.env.CAPRI_USER_DATA) app.setPath('userData', path.resolve(process.env.CAPRI_USER_DATA));
 // test/capture only: render at a fixed device scale (crisp high-res frames for the trailer harness)
 if (process.env.CAPRI_TEST === '1' && process.env.CAPRI_DPR) app.commandLine.appendSwitch('force-device-scale-factor', process.env.CAPRI_DPR);
-app.setAppUserModelId('dev.capri.companion');
+app.setAppUserModelId('dev.r3dpr0xy.capri.ptbr');
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', () => openPanel('chat'));
   app.whenReady().then(init).catch((e) => {
-    dialog.showErrorBox('Capri failed to start', String(e?.stack || e));
+    dialog.showErrorBox('A Capri não conseguiu iniciar', String(e?.stack || e));
     app.exit(1);
   });
 }
@@ -204,8 +204,8 @@ async function init() {
     activeWindow: fgRectDip,
     cue,
     aiConnected: () => monitor.connected,
-    blocked: () => (convo.busy ? 'conversation in progress' : recording ? 'listening' : drag.active ? 'being dragged' : throwTimer ? 'being thrown' : fullscreenHidden ? 'fullscreen app' : userHidden ? 'hidden'
-      : !mayInterrupt(settings.get(), { fullscreen: fullscreenHidden, hidden: userHidden }) ? 'do not disturb / quiet hours' : null),
+    blocked: () => (convo.busy ? 'conversa em andamento' : recording ? 'ouvindo' : drag.active ? 'sendo arrastada' : throwTimer ? 'sendo arremessada' : fullscreenHidden ? 'app em tela cheia' : userHidden ? 'escondida'
+      : !mayInterrupt(settings.get(), { fullscreen: fullscreenHidden, hidden: userHidden }) ? 'não perturbe / horário de silêncio' : null),
     // tests may pin the user's idle time so results don't depend on whether someone is at the machine
     userIdleSec: () => (TEST && typeof (globalThis as { __capriIdleOverride?: number }).__capriIdleOverride === 'number' ? (globalThis as { __capriIdleOverride?: number }).__capriIdleOverride! : powerMonitor.getSystemIdleTime()),
     log,
@@ -335,7 +335,7 @@ function createCharacter() {
     charWin?.destroy();
     charWin = null;
     if (charRestarts.length <= 3) setTimeout(createCharacter, 1000);
-    else dialog.showErrorBox('Capri', 'The character view keeps crashing. Open Diagnostics from the tray menu for details.');
+    else dialog.showErrorBox('Capri', 'A janela da personagem continua travando. Abra Diagnóstico no menu da bandeja para ver detalhes.');
   });
   charWin.on('closed', () => { charWin = null; });
 }
@@ -470,7 +470,7 @@ function toggleInteract() {
 // ---------------------------------------------------------------- voice
 function startRecording(): boolean {
   const s = settings.get();
-  if (!s.voice.micPermission) { openPanel('voice'); toPanel('chat:phase', { phase: 'error', detail: 'Microphone is off. Enable it in Voice settings first.' }); return false; }
+  if (!s.voice.micPermission) { openPanel('voice'); toPanel('chat:phase', { phase: 'error', detail: 'O microfone está desligado. Ative na aba Voz primeiro.' }); return false; }
   if (recording) return true;
   convo.stop(); // interrupt speech/generation when the user starts talking
   recording = true;
@@ -497,7 +497,7 @@ async function onAudio(wav: Uint8Array, durationMs: number) {
   recording = false;
   wake.suppress(3000);
   updateTrayMenu();
-  if (durationMs < 300 || wav.byteLength < 2000) { toPanel('chat:phase', { phase: 'idle', detail: 'Didn’t catch that.' }); cue({ type: 'phase', phase: 'idle' }); return; }
+  if (durationMs < 300 || wav.byteLength < 2000) { toPanel('chat:phase', { phase: 'idle', detail: 'Não entendi.' }); cue({ type: 'phase', phase: 'idle' }); return; }
   toPanel('chat:phase', { phase: 'transcribing' });
   cue({ type: 'phase', phase: 'transcribing' });
   const s = settings.get();
@@ -506,11 +506,11 @@ async function onAudio(wav: Uint8Array, durationMs: number) {
       ? await transcribeOpenAI(wav, s.voice.openaiStt.baseUrl, s.voice.openaiStt.model, secrets.get('openaiVoice') ?? secrets.get('openai'))
       : await transcribeWindows(wav);
     toPanel('transcript', { text, final: true });
-    if (!text) { toPanel('chat:phase', { phase: 'idle', detail: 'Didn’t catch that — try again or type.' }); cue({ type: 'phase', phase: 'idle' }); return; }
+    if (!text) { toPanel('chat:phase', { phase: 'idle', detail: 'Não entendi — tente de novo ou digite.' }); cue({ type: 'phase', phase: 'idle' }); return; }
     await convo.send(text, { viaVoice: true });
   } catch (e) {
     log.warn('transcription failed', { error: e as Error });
-    toPanel('chat:phase', { phase: 'error', detail: `Speech-to-text failed: ${(e as Error).message}. You can type instead.` });
+    toPanel('chat:phase', { phase: 'error', detail: `A transcrição da fala falhou: ${(e as Error).message}. Você pode digitar.` });
     cue({ type: 'phase', phase: 'error' });
   }
 }
@@ -567,9 +567,9 @@ async function captureScreen(): Promise<Screen> {
  * exploring, any mouse movement or keypress of the user's own ends it too. */
 async function useComputer(task: string, opts: { explore?: boolean; maxSteps?: number } = {}): Promise<{ ok: boolean; summary: string; steps: number }> {
   const key = secretFor('gemini');
-  if (!key) return { ok: false, summary: 'Using the computer needs a Gemini API key (Model → Gemini API key).', steps: 0 };
-  if (!hands.inputAvailable()) return { ok: false, summary: 'Mouse and keyboard control is unavailable on this system.', steps: 0 };
-  if (agentCtrl) return { ok: false, summary: "I'm already in the middle of a task.", steps: 0 };
+  if (!key) return { ok: false, summary: 'Usar o computador precisa de uma chave do Gemini (Modelo → Chave de API).', steps: 0 };
+  if (!hands.inputAvailable()) return { ok: false, summary: 'O controle de mouse e teclado não está disponível neste sistema.', steps: 0 };
+  if (agentCtrl) return { ok: false, summary: 'Já estou no meio de uma tarefa.', steps: 0 };
   const ctrl = (agentCtrl = new AbortController());
   const ai = new GoogleGenAI({ apiKey: key });
   // the user taking the mouse back: the cursor is somewhere she didn't put it, or (exploring) a key went down
@@ -586,7 +586,7 @@ async function useComputer(task: string, opts: { explore?: boolean; maxSteps?: n
   const panelWasOpen = !!panelWin && !panelWin.isDestroyed() && panelWin.isVisible() && !panelWin.isMinimized();
   if (panelWasOpen) panelWin!.minimize();
   applyMouseMode(false);
-  cue({ type: 'bubble', text: opts.explore ? 'Going for a look around.' : 'On it. Press Esc to stop me.' });
+  cue({ type: 'bubble', text: opts.explore ? 'Vou dar uma olhada por aí.' : 'Deixa comigo. Aperte Esc para me parar.' });
   cue({ type: 'workPose', pose: 'back' });
   log.info('agent: start', { chars: task.length });
   try {
@@ -601,7 +601,7 @@ async function useComputer(task: string, opts: { explore?: boolean; maxSteps?: n
           if (!model) {
             const wait = Math.min(...COMPUTER_MODELS.map((m) => cooldown.get(m)!)) - now;
             if (wait > 120_000) break; // every model is gone for good
-            cue({ type: 'bubble', text: 'Catching my breath…' });
+            cue({ type: 'bubble', text: 'Recuperando o fôlego…' });
             await new Promise<void>((r, j) => { const t = setTimeout(r, wait); signal.addEventListener('abort', () => { clearTimeout(t); j(new Error('aborted')); }, { once: true }); });
             continue;
           }
@@ -627,7 +627,7 @@ async function useComputer(task: string, opts: { explore?: boolean; maxSteps?: n
             log.info('agent: model cooling down', { model, sec });
           }
         }
-        throw new Error('The AI service is busy right now');
+        throw new Error('O serviço de IA está ocupado agora');
       },
       hands: {
         moveTo: async (x, y) => { moving = true; try { await hands.moveTo(x, y); } finally { expected = { x, y }; moving = false; lastOwn = Date.now(); } },
@@ -656,11 +656,11 @@ async function useComputer(task: string, opts: { explore?: boolean; maxSteps?: n
       log: (m, data) => log.info(m, data as Record<string, unknown>),
     }, ctrl.signal, opts);
     log.info('agent: end', { ok: r.ok, steps: r.steps });
-    if (!opts.explore) cue({ type: 'bubble', text: r.ok ? 'Done.' : r.summary.startsWith('Stopped') ? 'Stopped.' : 'I got stuck on that one.' });
+    if (!opts.explore) cue({ type: 'bubble', text: r.ok ? 'Pronto.' : r.summary.startsWith('Interrompida') ? 'Parei.' : 'Travei nessa.' });
     return r;
   } catch (e) {
     log.warn('agent: failed', { error: e as Error });
-    return { ok: false, summary: ctrl.signal.aborted ? 'Stopped by the user.' : `Something went wrong: ${(e as Error).message.slice(0, 120)}`, steps: 0 };
+    return { ok: false, summary: ctrl.signal.aborted ? 'Interrompida pelo usuário.' : `Algo deu errado: ${(e as Error).message.slice(0, 120)}`, steps: 0 };
   } finally {
     clearInterval(escWatch);
     agentCtrl = null;
@@ -671,10 +671,10 @@ async function useComputer(task: string, opts: { explore?: boolean; maxSteps?: n
 }
 // ---------------------------------------------------------------- autonomous exploring
 const EXPLORE_SPOTS = [
-  { url: 'https://www.reddit.com/r/Edgerunners/', what: 'the Edgerunners subreddit', goal: 'Scroll through the posts, open one or two that look interesting, and form an opinion.' },
-  { url: 'https://en.wikipedia.org/wiki/Special:Random', what: 'a random Wikipedia article', goal: 'Read it, follow one link that catches your eye, and decide what you think.' },
+  { url: 'https://www.reddit.com/r/Edgerunners/', what: 'o subreddit de Edgerunners', goal: 'Scroll through the posts, open one or two that look interesting, and form an opinion.' },
+  { url: 'https://pt.wikipedia.org/wiki/Especial:Aleat%C3%B3ria', what: 'um artigo aleatório da Wikipédia', goal: 'Read it, follow one link that catches your eye, and decide what you think.' },
   { url: 'https://news.ycombinator.com/', what: 'Hacker News', goal: 'Skim the headlines, open the most interesting story, and react to it.' },
-  { url: 'https://cyberpunk.fandom.com/wiki/Capri', what: 'your own page on the Cyberpunk wiki', goal: 'Read what people wrote about you and react to it.' },
+  { url: 'https://cyberpunk.fandom.com/wiki/Capri', what: 'a sua própria página na wiki de Cyberpunk', goal: 'Read what people wrote about you and react to it.' },
 ];
 let exploredThisIdle = false;
 async function exploreTick(idleSec: number) {
@@ -691,7 +691,7 @@ async function exploreTick(idleSec: number) {
   const r = await useComputer(`You just opened ${spot.what} in the browser. ${spot.goal}`, { explore: true, maxSteps: 14 });
   if (r.ok && r.summary) {
     cue({ type: 'bubble', text: r.summary.slice(0, 140) });
-    const msg = { id: newId('a'), role: 'assistant' as const, content: `While you were away I looked at ${spot.what}. ${r.summary}`, ts: Date.now(), meta: { provider: 'explore' } };
+    const msg = { id: newId('a'), role: 'assistant' as const, content: `Enquanto você estava fora, dei uma olhada em ${spot.what}. ${r.summary}`, ts: Date.now(), meta: { provider: 'explore' } };
     history.append(msg);
     toPanel('chat:done', { message: msg });
     speak('proactive', `explore:${msg.id}`, r.summary);
@@ -720,10 +720,10 @@ function onReminder(r: { text: string; kind: string }) {
   toPanel('reminder:fired', r);
   if (s.notifications.reminders && Notification.isSupported() && !OFFSCREEN) {
     const icon = app.isPackaged ? path.join(process.resourcesPath, 'icon.png') : path.join(app.getAppPath(), 'build', 'icon.png');
-    new Notification({ title: r.kind === 'timer' ? 'Capri · timer done' : 'Capri · reminder', body: r.text, icon: fs.existsSync(icon) ? icon : undefined, silent: !s.notifications.sound || s.behavior.doNotDisturb }).show();
+    new Notification({ title: r.kind === 'timer' ? 'Capri · timer acabou' : 'Capri · lembrete', body: r.text, icon: fs.existsSync(icon) ? icon : undefined, silent: !s.notifications.sound || s.behavior.doNotDisturb }).show();
   }
   cue({ type: 'react', reaction: 'wave' });
-  speak('reminder', `rem:${Date.now()}`, r.kind === 'timer' ? `Timer's up, choom. ${r.text}.` : `Hey — reminder: ${r.text}.`);
+  speak('reminder', `rem:${Date.now()}`, r.kind === 'timer' ? `O tempo acabou, choom. ${r.text}.` : `Ei — lembrete: ${r.text}.`);
 }
 
 // ---------------------------------------------------------------- tray & shortcuts
@@ -742,7 +742,7 @@ function trayIcon() {
 }
 function createTray() {
   tray = new Tray(trayIcon());
-  tray.setToolTip('Capri');
+  tray.setToolTip('Capri PT-BR');
   tray.on('click', () => openPanel('chat'));
   updateTrayMenu();
 }
@@ -752,26 +752,26 @@ function updateTrayMenu() {
   const visible = shown(charWin);
   const items: MenuItemConstructorOptions[] = [
     { label: 'Chat…  (Ctrl+Alt+Space)', click: () => openPanel('chat') },
-    { label: recording ? 'Stop listening' : 'Push to talk  (Ctrl+Alt+T)', enabled: s.voice.micPermission, click: () => (recording ? stopRecording() : startRecording()) },
+    { label: recording ? 'Parar de ouvir' : 'Apertar para falar  (Ctrl+Alt+T)', enabled: s.voice.micPermission, click: () => (recording ? stopRecording() : startRecording()) },
     { type: 'separator' },
-    { label: visible ? 'Hide Capri  (Ctrl+Alt+H)' : 'Show Capri  (Ctrl+Alt+H)', click: toggleHidden },
-    { label: 'Teleport  (Ctrl+Alt+P)', enabled: visible, click: () => void teleporter.go('auto', 'manual') },
-    { label: 'Teleport to cursor', enabled: visible, click: () => void teleporter.go('near_cursor', 'manual') },
-    { label: 'Sit on the active window', enabled: visible, click: () => void teleporter.go('perch', 'manual') },
-    { label: 'Peek in from the edge', enabled: visible, click: () => void teleporter.go('peek', 'manual') },
-    { label: 'Click-through', type: 'checkbox', checked: s.character.clickThrough, click: (i) => settings.update({ character: { clickThrough: i.checked } }) },
-    { label: 'Interact for 15s  (Ctrl+Alt+C)', enabled: s.character.clickThrough, click: toggleInteract },
-    { label: 'Do not disturb', type: 'checkbox', checked: s.behavior.doNotDisturb, click: (i) => settings.update({ behavior: { doNotDisturb: i.checked } }) },
-    { label: 'Reset position', click: () => { settings.update({ character: { position: null } }); charWin?.destroy(); createCharacter(); } },
+    { label: visible ? 'Esconder a Capri  (Ctrl+Alt+H)' : 'Mostrar a Capri  (Ctrl+Alt+H)', click: toggleHidden },
+    { label: 'Teletransportar  (Ctrl+Alt+P)', enabled: visible, click: () => void teleporter.go('auto', 'manual') },
+    { label: 'Teletransportar até o cursor', enabled: visible, click: () => void teleporter.go('near_cursor', 'manual') },
+    { label: 'Sentar na janela ativa', enabled: visible, click: () => void teleporter.go('perch', 'manual') },
+    { label: 'Espiar pela borda', enabled: visible, click: () => void teleporter.go('peek', 'manual') },
+    { label: 'Clique atravessa', type: 'checkbox', checked: s.character.clickThrough, click: (i) => settings.update({ character: { clickThrough: i.checked } }) },
+    { label: 'Interagir por 15 s  (Ctrl+Alt+C)', enabled: s.character.clickThrough, click: toggleInteract },
+    { label: 'Não perturbe', type: 'checkbox', checked: s.behavior.doNotDisturb, click: (i) => settings.update({ behavior: { doNotDisturb: i.checked } }) },
+    { label: 'Redefinir posição', click: () => { settings.update({ character: { position: null } }); charWin?.destroy(); createCharacter(); } },
     { type: 'separator' },
-    { label: 'Settings…', click: () => openPanel('settings') },
-    { label: 'Diagnostics…', click: () => openPanel('diagnostics') },
+    { label: 'Configurações…', click: () => openPanel('settings') },
+    { label: 'Diagnóstico…', click: () => openPanel('diagnostics') },
     { type: 'separator' },
-    { label: 'Restart', click: restart },
-    { label: 'Quit Capri', click: () => app.quit() },
+    { label: 'Reiniciar', click: restart },
+    { label: 'Fechar a Capri', click: () => app.quit() },
   ];
   tray.setContextMenu(Menu.buildFromTemplate(items));
-  tray.setToolTip(`Capri${recording ? ' — 🎙 listening' : wake.running ? ' — wake word on' : ''}${s.behavior.doNotDisturb ? ' — DND' : ''}`);
+  tray.setToolTip(`Capri PT-BR${recording ? ' — 🎙 ouvindo' : wake.running ? ' — ativação por voz ligada' : ''}${s.behavior.doNotDisturb ? ' — não perturbe' : ''}`);
 }
 function toggleHidden() {
   userHidden = shown(charWin);
@@ -789,15 +789,15 @@ const shortcutStatus: Record<string, string> = {};
 function registerShortcuts() {
   // [preferred, fallback] — another app may already own the preferred combo
   const map: [string[], string, () => void][] = [
-    [['Control+Alt+Space', 'Control+Alt+K'], 'Open chat', () => { summonNearCursor(); openPanel('chat'); }],
-    [['Control+Alt+T', 'Control+Alt+Y'], 'Push-to-talk', () => (recording ? stopRecording() : startRecording())],
-    [['Control+Alt+H', 'Control+Alt+J'], 'Hide / show', toggleHidden],
-    [['Control+Alt+C', 'Control+Alt+V'], 'Interact (click-through)', toggleInteract],
-    [['Control+Alt+X', 'Control+Alt+Z'], 'Stop / cancel', () => { convo.stop(); stopRecording(true); }],
-    [['Control+Alt+P', 'Control+Alt+O'], 'Teleport', () => void teleporter.go('auto', 'manual')],
+    [['Control+Alt+Space', 'Control+Alt+K'], 'Abrir chat', () => { summonNearCursor(); openPanel('chat'); }],
+    [['Control+Alt+T', 'Control+Alt+Y'], 'Apertar para falar', () => (recording ? stopRecording() : startRecording())],
+    [['Control+Alt+H', 'Control+Alt+J'], 'Esconder / mostrar', toggleHidden],
+    [['Control+Alt+C', 'Control+Alt+V'], 'Interagir (clique atravessa)', toggleInteract],
+    [['Control+Alt+X', 'Control+Alt+Z'], 'Parar / cancelar', () => { convo.stop(); stopRecording(true); }],
+    [['Control+Alt+P', 'Control+Alt+O'], 'Teletransportar', () => void teleporter.go('auto', 'manual')],
   ];
   for (const [accs, label, fn] of map) {
-    shortcutStatus[label] = 'unavailable';
+    shortcutStatus[label] = 'indisponível';
     for (const acc of accs) {
       try {
         if (globalShortcut.register(acc, fn)) { shortcutStatus[label] = acc.replace('Control', 'Ctrl'); break; }
@@ -811,19 +811,19 @@ function charMenu() {
   const s = settings.get();
   Menu.buildFromTemplate([
     { label: 'Chat', click: () => openPanel('chat') },
-    { label: 'Push to talk', enabled: s.voice.micPermission, click: () => startRecording() },
-    { label: 'Stop talking', click: () => convo.stop() },
-    { label: 'Teleport', click: () => void teleporter.go('auto', 'manual') },
-    { label: 'Sit on this window', click: () => void teleporter.go('perch', 'manual') },
-    { label: 'Pose', submenu: [['Sit', 'sit'], ['Stand', 'stand'], ['Recline', 'recline'], ['Curl up', 'curl_up'], ['Power stance', 'power_stance']].map(([label, name]) => ({ label, click: () => cue({ type: 'clip', name }) })) },
-    { label: 'Teleport to other monitor', enabled: screen.getAllDisplays().length > 1, click: () => void teleporter.go('other_monitor', 'manual') },
+    { label: 'Apertar para falar', enabled: s.voice.micPermission, click: () => startRecording() },
+    { label: 'Parar de falar', click: () => convo.stop() },
+    { label: 'Teletransportar', click: () => void teleporter.go('auto', 'manual') },
+    { label: 'Sentar nesta janela', click: () => void teleporter.go('perch', 'manual') },
+    { label: 'Pose', submenu: [['Sentar', 'sit'], ['Ficar de pé', 'stand'], ['Reclinar', 'recline'], ['Encolher', 'curl_up'], ['Pose de poder', 'power_stance']].map(([label, name]) => ({ label, click: () => cue({ type: 'clip', name }) })) },
+    { label: 'Teletransportar para outro monitor', enabled: screen.getAllDisplays().length > 1, click: () => void teleporter.go('other_monitor', 'manual') },
     { type: 'separator' },
-    { label: 'Click-through', type: 'checkbox', checked: s.character.clickThrough, click: (i) => settings.update({ character: { clickThrough: i.checked } }) },
-    { label: 'Do not disturb', type: 'checkbox', checked: s.behavior.doNotDisturb, click: (i) => settings.update({ behavior: { doNotDisturb: i.checked } }) },
-    { label: 'Hide', click: toggleHidden },
-    { label: 'Settings…', click: () => openPanel('settings') },
+    { label: 'Clique atravessa', type: 'checkbox', checked: s.character.clickThrough, click: (i) => settings.update({ character: { clickThrough: i.checked } }) },
+    { label: 'Não perturbe', type: 'checkbox', checked: s.behavior.doNotDisturb, click: (i) => settings.update({ behavior: { doNotDisturb: i.checked } }) },
+    { label: 'Esconder', click: toggleHidden },
+    { label: 'Configurações…', click: () => openPanel('settings') },
     { type: 'separator' },
-    { label: 'Quit', click: () => app.quit() },
+    { label: 'Fechar', click: () => app.quit() },
   ]).popup({ window: charWin ?? undefined });
 }
 
@@ -920,13 +920,13 @@ function registerIpc() {
   handle('app:quit', 'panel', none, () => app.quit());
   handle('app:restart', 'panel', none, restart);
   handle('apps:pick', 'panel', none, async () => {
-    const r = await dialog.showOpenDialog(panelWin!, { title: 'Approve an application for Capri to launch', properties: ['openFile'], filters: [{ name: 'Programs & shortcuts', extensions: ['exe', 'lnk', 'url', 'appref-ms'] }] });
+    const r = await dialog.showOpenDialog(panelWin!, { title: 'Aprovar um aplicativo para a Capri abrir', properties: ['openFile'], filters: [{ name: 'Programas e atalhos', extensions: ['exe', 'lnk', 'url', 'appref-ms'] }] });
     if (r.canceled || !r.filePaths[0]) return null;
     const p = r.filePaths[0];
     return { name: path.basename(p).replace(/\.(exe|lnk|url|appref-ms)$/i, ''), path: p };
   });
   handle('folders:pick', 'panel', none, async () => {
-    const r = await dialog.showOpenDialog(panelWin!, { title: 'Authorize a folder for file search', properties: ['openDirectory'] });
+    const r = await dialog.showOpenDialog(panelWin!, { title: 'Autorizar uma pasta para a busca de arquivos', properties: ['openDirectory'] });
     return r.canceled ? null : r.filePaths[0] ?? null;
   });
   handle('panel:open', 'any', str(30).optional(), (tab) => openPanel(tab || 'chat'));
@@ -947,7 +947,7 @@ function registerIpc() {
     recording = false;
     updateTrayMenu();
     log.warn('microphone error', { msg });
-    toPanel('chat:phase', { phase: 'error', detail: `Microphone error: ${msg}` });
+    toPanel('chat:phase', { phase: 'error', detail: `Erro no microfone: ${msg}` });
   });
   handle('char:fps', 'char', z.number().min(0).max(1000), (fps) => { lastFps = fps; });
   handle('tts:fetch', 'char', str(4000), async (text) => {

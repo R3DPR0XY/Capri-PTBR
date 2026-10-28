@@ -168,7 +168,7 @@ describe('Gemini provider (Interactions API, mocked server)', () => {
     expect(ok.ok).toBe(true);
     const missing = await new GeminiProvider({ apiKey: KEY, model: 'gemini-9', fallbackModel: '', thinkingLevel: 'minimal', serverUrl: srv.url }).test();
     expect(missing).toMatchObject({ ok: false });
-    expect(missing.detail).toMatch(/isn't available/);
+    expect(missing.detail).toMatch(/não está disponível/);
     const list = await new GeminiProvider({ apiKey: KEY, model: 'x', fallbackModel: '', thinkingLevel: 'minimal', serverUrl: srv.url }).listModels();
     expect(list).toEqual(['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite']); // TTS filtered out
     await srv.close();
@@ -323,11 +323,11 @@ describe('TeleportController', () => {
     expect([a.ok, b.ok].sort()).toEqual([false, true]);
   });
   it('autonomous teleport requires a live AI connection and respects blockers', async () => {
-    expect(await rig({ connected: false }).tc.autoTick()).toBe('AI is not connected');
+    expect(await rig({ connected: false }).tc.autoTick()).toBe('IA não conectada');
     expect(await rig({ blocked: 'conversation in progress' }).tc.autoTick()).toBe('conversation in progress');
-    expect(await rig({ idle: 900 }).tc.autoTick()).toBe('user is away');
+    expect(await rig({ idle: 900 }).tc.autoTick()).toBe('usuário ausente');
     const off = rig(); off.s.teleport.auto = false;
-    expect(await off.tc.autoTick()).toBe('automatic teleport is off');
+    expect(await off.tc.autoTick()).toBe('teletransporte automático desligado');
     const ok = rig();
     expect(await ok.tc.autoTick()).toBeNull();
     expect(ok.tc.count).toBe(1);

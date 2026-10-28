@@ -154,8 +154,8 @@ describe('speech text helpers', () => {
     expect(c.end()).toEqual(['I am']);
   });
   it('strips markdown, code and URLs for TTS', () => {
-    expect(speakable('Run `npm i` then see https://x.com **now**')).toBe('Run npm i then see the link now');
-    expect(speakable('```js\nconsole.log(1)\n```')).toBe('(code in the chat)');
+    expect(speakable('Run `npm i` then see https://x.com **now**')).toBe('Run npm i then see o link now');
+    expect(speakable('```js\nconsole.log(1)\n```')).toBe('(código no chat)');
   });
 });
 
@@ -178,11 +178,38 @@ describe('offline command brain', () => {
   it('answers time and help without actions; asks for missing info', () => {
     expect(act(offlineReply('what time is it'))).toBeUndefined();
     expect(offlineReply('help')).toMatch(/timers/);
-    expect(offlineReply('timer')).toMatch(/How long/);
+    expect(offlineReply('timer')).toMatch(/De quanto tempo/);
   });
   it('summarizes action results', () => {
     expect(offlineReply('[action results]\n- start_timer ok: Timer running')).toMatch(/Timer running/);
-    expect(offlineReply('[action results]\n- open_url failed: declined')).toMatch(/snag/);
+    expect(offlineReply('[action results]\n- open_url failed: declined')).toMatch(/problema/);
+  });
+  it.each([
+    ['timer de 5 minutos', 'start_timer'],
+    ['coloca um timer de meia hora', 'start_timer'],
+    ['me lembra de alongar daqui a 20 minutos', 'set_reminder'],
+    ['me lembra de ligar pra mãe às 18h', 'set_reminder'],
+    ['nota: comprar café', 'create_note'],
+    ['abrir github.com', 'open_url'],
+    ['abre o bloco de notas', 'launch_app'],
+    ['procurar arquivos chamados orçamento', 'search_files'],
+    ['cancela o timer', 'cancel_timer'],
+    ['mostra minhas notas', 'list_notes'],
+    ['lembra que eu gosto de synthwave', 'remember'],
+    ['teletransporta', 'teleport'],
+    ['vem aqui', 'teleport'],
+  ])('PT-BR: "%s" → %s', (input, tool) => {
+    expect(JSON.parse(act(offlineReply(input))!).tool).toBe(tool);
+  });
+  it('PT-BR: limpa o texto do lembrete e entende horários', () => {
+    expect(JSON.parse(act(offlineReply('me lembra de ligar pra mãe às 18h'))!).args.text).toBe('ligar pra mãe');
+    expect(act(offlineReply('que horas são?'))).toBeUndefined();
+    expect(parseDuration('meia hora')).toBe(1_800_000);
+    expect(parseDuration('uma hora e 10 segundos')).toBe(3_610_000);
+    const now = new Date(2026, 9, 27, 14, 0, 0);
+    expect(parseWhen('daqui a 20 minutos', now)).toBe(now.getTime() + 1_200_000);
+    expect(new Date(parseWhen('às 8 da noite', now)!).getHours()).toBe(20);
+    expect(new Date(parseWhen('amanhã às 9', now)!).getDate()).toBe(28);
   });
 });
 

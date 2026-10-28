@@ -56,16 +56,16 @@ describe('computer control', () => {
     const { deps, did } = fake(['{"action":"key","keys":"win"}'], { stopAfter: 2 });
     const r = await runTask('loop forever', deps, new AbortController().signal);
     expect(r.ok).toBe(false);
-    expect(r.summary).toMatch(/Stopped/);
+    expect(r.summary).toMatch(/Interrompida/);
     expect(did.length).toBeLessThanOrEqual(2);
     const ac = new AbortController(); ac.abort();
-    expect((await runTask('x', fake(['{"action":"done"}']).deps, ac.signal)).summary).toMatch(/Stopped/);
+    expect((await runTask('x', fake(['{"action":"done"}']).deps, ac.signal)).summary).toMatch(/Interrompida/);
   }, 20_000);
 
   it('gives up after three replies it cannot understand', async () => {
     const r = await runTask('x', fake(['garbage']).deps, new AbortController().signal);
     expect(r).toMatchObject({ ok: false });
-    expect(r.summary).toMatch(/next step/);
+    expect(r.summary).toMatch(/próximo passo/);
   }, 20_000);
 });
 

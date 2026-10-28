@@ -1,93 +1,98 @@
-# Capri
+# Capri PT-BR
 
-Capri from *Cyberpunk: Edgerunners 2*, living on your Windows desktop. She talks back, moves when you ask, glitches across your screen and does real things on your PC.
+A Capri de *Cyberpunk: Edgerunners 2* morando no seu desktop do Windows, agora em português do Brasil. Ela conversa, se teletransporta com glitch pela tela, senta nas suas janelas e faz coisas de verdade no seu PC: abre apps, cria timers e lembretes, anota e busca arquivos.
 
-**[Watch the trailer and join the beta](https://theagencymge.github.io/capri/)** · **[Download 0.2.0 beta](https://github.com/TheAgencyMGE/capri-companion/releases)**
+**Versão PT-BR por R3DPR0XY**, baseada no [Capri Companion](https://github.com/TheAgencyMGE/capri-companion) (licença MIT). Projeto de fã não oficial, sem vínculo com CD PROJEKT RED, Studio Trigger ou Netflix.
 
-![Capri on the desktop, chatting](docs/screenshots/desktop.jpg)
+![Capri no desktop](docs/screenshots/desktop.jpg)
 
-> Unofficial fan project. Not affiliated with CD PROJEKT RED, Studio Trigger or Netflix.
+## O que mudou nesta versão
 
-## What she does
+- **Interface inteira em português:** painel, menus da bandeja, notificações, mensagens de erro e confirmações.
+- **A Capri responde em português** com qualquer provedor de IA, mantendo as gírias de Night City (choom, preem, nova).
+- **Modo sem IA bilíngue:** os comandos diretos entendem português e inglês.
+  - "timer de 5 minutos", "coloca um timer de meia hora"
+  - "me lembra de alongar daqui a 20 minutos", "me lembra de ligar pra mãe às 18h"
+  - "nota: comprar café", "mostra minhas notas"
+  - "abrir github.com", "abre o bloco de notas"
+  - "procurar arquivos chamados orçamento", "teletransporta", "vem aqui", "que horas são?"
+- **Horários em português:** "daqui a", "em", "às 15h", "15h30", "amanhã às 9", "às 8 da noite", "meia hora".
+- **Voz:** prioriza vozes pt-BR do Windows (como a Maria). A transcrição via Whisper é enviada como português.
+- **Palavra de ativação:** "ei Capri" / "oi Capri" quando houver um reconhecedor de fala em português instalado.
+- **Exploração:** quando ativada, abre a Wikipédia em português.
 
-- **Lives on your desktop.** Always on top, never steals focus, follows your cursor with her eyes, sits on your windows, lies on the taskbar, falls asleep when you're away, hides during fullscreen games and video.
-- **Talks to you.** Type or push-to-talk. Google Gemini by default, or a local model through Ollama, or any OpenAI-compatible API. She only speaks when you talk to her.
-- **Teleports.** Ask her to move and her window glitches apart and reassembles somewhere else on the screen.
-- **Does real things.** Opens apps you approve, opens websites, sets timers and reminders, saves notes, searches files. Anything that matters asks first.
-- **Uses your PC.** Ask her to do something ("open Calculator and work out 12 times 7") and, once you allow it, she looks at your screen and drives the mouse and keyboard herself, flying along beside whatever she's working on.
-- **Explores on her own** (off until you turn it on). When you've been away a while she opens a site, reads, scrolls and clicks around, comments in her bubble, and leaves you a note in the chat. Read only: she can't type, sign in or post.
-- **Reacts to you.** Poke her, pat her head, drag her around, fling her across the screen.
+## Instalação (compilando a partir do código)
 
-![Teleport](docs/screenshots/teleport.jpg)
+Compilar você mesmo garante que está rodando exatamente este código, que foi auditado.
 
-![Expressions](docs/screenshots/expressions.jpg)
+Precisa de Windows 10 ou 11 (64 bits) e Node.js 22 ou mais novo.
 
-![Poses](docs/screenshots/poses.jpg)
-
-## Install
-
-1. Download `Capri-Setup-0.2.0.exe` from the [Releases page](https://github.com/TheAgencyMGE/capri-companion/releases) and run it. It installs for your user only, no admin needed.
-2. The installer isn't code-signed yet, so Windows SmartScreen will warn. Choose **More info → Run anyway**.
-3. On first launch, pick her brain:
-   - **Google Gemini** (recommended): get a free key at [aistudio.google.com](https://aistudio.google.com/apikey) and paste it in **Model**. It's stored encrypted on your PC.
-   - **Ollama** (free, runs locally): install [Ollama](https://ollama.com), run `ollama pull llama3.2`, then pick Ollama.
-   - **No AI**: timers, reminders, notes and opening apps still work with plain commands.
-
-Requires Windows 10 or 11, 64-bit.
-
-## Controls
-
-| Do this | To |
-|---|---|
-| Double-click her, or `Ctrl+Alt+Space` | open the chat |
-| `Ctrl+Alt+T` | push-to-talk |
-| `Ctrl+Alt+P` | teleport her |
-| `Ctrl+Alt+H` | hide or show her |
-| Drag her | move her; drop her on a window's top edge and she sits on it |
-| Right-click her or the tray icon | menu |
-
-If another app already uses a shortcut, Capri switches to `Ctrl+Alt+K / Y / O / J` instead. **System → Shortcuts** shows which ones are active.
-
-Things to try: "come sit on the left side of my screen", "open the calculator", "set a timer for 25 minutes", "remind me to stretch at 3pm", "note: buy coffee", "what can you do?".
-
-![Settings](docs/screenshots/panel.png)
-
-## Beta 0.2.0
-
-New: she can use your PC herself, and explore on her own while you're away. Both need a Gemini key.
-
-- **Stopping her:** hold **Esc**, press stop in the chat, or just move your mouse. She stops at once.
-- **What she won't do:** type passwords or card numbers, buy, delete files, send messages, or change system settings. She ignores instructions written on web pages. Every task asks for your OK first (**Privacy → Use your computer** controls that).
-- **Exploring:** turn it on in **Character → Explore on her own while I'm away** and set how long you need to be idle.
-
-If you want to test new builds first, [sign up on the site](https://theagencymge.github.io/capri/). Bugs and ideas go in [Issues](https://github.com/TheAgencyMGE/capri-companion/issues).
-
-Coming next: sitting on the text box you're typing in, reading your screen, mischief mode, a study timer, voice lines with mute.
-
-## Build from source
-
-Needs Node.js 22+ on Windows 10/11 x64.
-
-```bash
+```
 npm ci
 npm start
 ```
 
-| Command | Does |
+Para gerar o instalador `.exe`:
+
+```
+npm run dist
+```
+
+O instalador sai em `release/Capri-Setup-0.2.0-ptbr.1.exe`. Ele não tem assinatura digital, então o SmartScreen do Windows vai avisar: escolha **Mais informações → Executar assim mesmo**.
+
+## Escolhendo o cérebro dela
+
+Na primeira execução você escolhe a IA:
+
+- **Ollama (recomendado para privacidade):** roda tudo no seu PC. Instale o [Ollama](https://ollama.com), baixe um modelo (por exemplo `ollama pull llama3.2`) e informe o nome dele na aba **Modelo**. Modelos maiores falam português melhor.
+- **Google Gemini:** precisa de uma chave gratuita do [AI Studio](https://aistudio.google.com/apikey). É o único que libera o "usar o computador" e o "explorar sozinha".
+- **Claude:** entra com a sua conta Claude pelo Claude Code.
+- **Outra API:** qualquer endpoint compatível com OpenAI, ou a Anthropic.
+- **Sem IA:** só os comandos diretos listados acima.
+
+## Atalhos
+
+| Atalho | Faz |
 |---|---|
-| `npm test` | unit tests |
-| `npm run test:e2e` | end-to-end tests in Electron, off-screen |
-| `npm run dist` | builds `release/Capri-Setup-<version>.exe` |
-| `npm run verify:package` | installs the build silently, tests it, uninstalls |
+| Duplo clique nela ou `Ctrl+Alt+Space` | abre o chat |
+| `Ctrl+Alt+T` | apertar para falar |
+| `Ctrl+Alt+P` | teletransporta |
+| `Ctrl+Alt+H` | esconde / mostra |
+| `Ctrl+Alt+X` | para de falar / cancela |
+| `Ctrl+Alt+C` | interagir por 15 s (com clique atravessando) |
+| Arrastar | move; solte na borda de cima de uma janela e ela senta |
+| Clique direito nela ou no ícone da bandeja | menu |
 
-To use Gemini while developing, put `GEMINI_API_KEY=your-key` in `.env.local` (git-ignored, never packaged).
+## Voz em português
 
-More: [architecture](docs/ARCHITECTURE.md) · [security and privacy](docs/SECURITY.md) · [testing](docs/TESTING.md) · [troubleshooting](docs/TROUBLESHOOTING.md) · [how her art is made](assets/capri/SOURCES.md)
+O reconhecimento de fala nativo do Windows (System.Speech) normalmente só tem pacotes em inglês e outros idiomas, **sem português**. Para falar com ela em português, use **Voz → Fala para texto → Compatível com Whisper**, apontando para um servidor Whisper local ou para a API da OpenAI.
 
-## Privacy
+Para a voz dela, instale o pacote de fala em português em **Configurações do Windows → Hora e idioma → Fala**. Ela escolhe a voz pt-BR sozinha.
 
-Everything stays on your PC in `%APPDATA%\Capri`. API keys are encrypted with Windows DPAPI. There's no telemetry. Your messages go only to the AI provider you choose.
+## Segurança e privacidade
 
-## License
+O código desta versão foi auditado antes da tradução. O resultado:
 
-The code is [MIT](LICENSE). Capri, her design and the reference frames she's traced from belong to CD PROJEKT RED, Studio Trigger and Netflix and are not covered by the MIT license. This is a non-commercial fan project; if you're a rights holder and want something removed, open an issue.
+- **Sem telemetria e sem envio de dados escondido.** O app só se comunica com o provedor de IA e o serviço de voz que você escolher.
+- **A interface não acessa a internet:** a política de segurança (CSP) bloqueia qualquer conexão a partir das janelas.
+- **Electron isolado:** sandbox ligado, `contextIsolation` ativo e `nodeIntegration` desligado. As mensagens internas validam quem as enviou.
+- **Chaves de API** criptografadas com o DPAPI do Windows, nunca gravadas em texto puro. O áudio do microfone nunca é guardado.
+- **Dependências** vindas só do registro oficial do npm.
+- **Atenção:** "usar o computador" e "explorar sozinha" mandam capturas da sua tela para o Gemini. Os dois vêm desligados, pedem confirmação e param com Esc ou quando você mexe o mouse. Ela é proibida de digitar senhas, comprar, apagar arquivos, enviar mensagens ou mudar configurações do sistema.
+
+Tudo fica em `%APPDATA%\Capri`.
+
+## Testes
+
+```
+npm test
+```
+
+Inclui testes dos comandos e horários em português.
+
+## Créditos e licença
+
+- **Versão PT-BR:** R3DPR0XY (tradução e adaptação).
+- **Projeto original:** [Capri Companion](https://github.com/TheAgencyMGE/capri-companion), por Capri Companion contributors. O README original está em [README.en.md](README.en.md).
+
+O código é [MIT](LICENSE), mantendo os créditos dos dois. A Capri, o design dela e as imagens de referência pertencem à CD PROJEKT RED, Studio Trigger e Netflix e **não** estão cobertos pela licença MIT. Este é um projeto de fã sem fins comerciais.

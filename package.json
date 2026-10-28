@@ -1,6 +1,6 @@
 {
   "name": "capri-companion",
-  "version": "0.2.0",
+  "version": "0.2.0-ptbr.1",
   "main": "dist/main/index.js",
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -13,9 +13,9 @@
     "dist": "node scripts/dist.mjs",
     "verify:package": "node scripts/verify-package.mjs"
   },
-  "author": "Capri Companion contributors",
+  "author": "R3DPR0XY (versão PT-BR) · original: Capri Companion contributors",
   "license": "MIT",
-  "description": "Capri \u2014 a desktop AI companion (fan-made, unofficial)",
+  "description": "Capri PT-BR \u2014 companheira de IA para o desktop, versão em português por R3DPR0XY (projeto de fã, não oficial)",
   "dependencies": {
     "@google/genai": "^2.31.0",
     "koffi": "^3.3.4"
@@ -33,9 +33,9 @@
   "productName": "Capri",
   "private": true,
   "build": {
-    "appId": "dev.capri.companion",
+    "appId": "dev.r3dpr0xy.capri.ptbr",
     "productName": "Capri",
-    "copyright": "Unofficial fan project. Not affiliated with CD PROJEKT, Studio Trigger or Netflix.",
+    "copyright": "Versão PT-BR por R3DPR0XY, baseada no Capri Companion (MIT). Projeto de fã não oficial, sem vínculo com CD PROJEKT, Studio Trigger ou Netflix.",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -70,7 +70,7 @@
         }
       ],
       "icon": "build/icon.ico",
-      "legalTrademarks": "Unofficial fan project"
+      "legalTrademarks": "Projeto de fã não oficial"
     },
     "nsis": {
       "oneClick": false,

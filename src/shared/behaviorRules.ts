@@ -18,10 +18,10 @@ export function mayInterrupt(s: Settings, ctx: { fullscreen: boolean; hidden: bo
 
 // Interpretation lines (see docs/CHARACTER_DOSSIER.md §3) — used only when idle remarks are enabled.
 export const IDLE_REMARKS = [
-  'Still here, choom.',
-  'Your desktop’s cozy. Messy, but cozy.',
-  'Hydrate. Even chrome needs coolant.',
-  'Ping me if you need a hand. Or a brain. I’ve got dozens.',
-  'Stretch. Your spine isn’t cyberware.',
-  'Quiet in here. I like it… mostly.',
+  'Ainda tô aqui, choom.',
+  'Seu desktop é aconchegante. Bagunçado, mas aconchegante.',
+  'Bebe água. Até cromo precisa de refrigeração.',
+  'Me chama se precisar de uma mão. Ou de um cérebro. Tenho dezenas.',
+  'Se alonga. Sua coluna não é cyberware.',
+  'Silêncio por aqui. Eu gosto… quase sempre.',
 ];

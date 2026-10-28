@@ -27,8 +27,10 @@ const STT_SCRIPT = `
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Speech
-$rec = [System.Speech.Recognition.SpeechRecognitionEngine]::InstalledRecognizers() | Where-Object { $_.Culture.Name -like 'en-*' } | Select-Object -First 1
-if (-not $rec) { $rec = [System.Speech.Recognition.SpeechRecognitionEngine]::InstalledRecognizers() | Select-Object -First 1 }
+$all = [System.Speech.Recognition.SpeechRecognitionEngine]::InstalledRecognizers()
+$rec = $all | Where-Object { $_.Culture.Name -like 'pt-*' } | Select-Object -First 1
+if (-not $rec) { $rec = $all | Where-Object { $_.Culture.Name -like 'en-*' } | Select-Object -First 1 }
+if (-not $rec) { $rec = $all | Select-Object -First 1 }
 if (-not $rec) { [Console]::Error.Write('NO_RECOGNIZER'); exit 3 }
 $e = New-Object System.Speech.Recognition.SpeechRecognitionEngine($rec)
 $e.LoadGrammar((New-Object System.Speech.Recognition.DictationGrammar))
@@ -50,7 +52,7 @@ export async function probeWindowsRecognizer() {
   if (probeCache) return probeCache;
   if (process.platform !== 'win32') return (probeCache = { available: false, detail: 'Not Windows' });
   const r = await runPs(PROBE_SCRIPT, {}, 15000);
-  probeCache = r.out.trim() ? { available: true, detail: r.out.trim() } : { available: false, detail: r.err.trim() || 'No speech recognizer installed (Settings → Time & language → Speech)' };
+  probeCache = r.out.trim() ? { available: true, detail: r.out.trim() } : { available: false, detail: r.err.trim() || 'Nenhum reconhecedor de fala instalado (Configurações → Hora e idioma → Fala)' };
   return probeCache;
 }
 
@@ -60,8 +62,8 @@ export async function transcribeWindows(wav: Uint8Array): Promise<string> {
   fs.writeFileSync(file, wav);
   try {
     const r = await runPs(STT_SCRIPT, { CAPRI_WAV: file }, 60_000);
-    if (r.code === 3) throw new Error('No Windows speech recognizer is installed.');
-    if (r.code !== 0) throw new Error(`Windows speech recognition failed: ${r.err.split('\n')[0].slice(0, 200)}`);
+    if (r.code === 3) throw new Error('Nenhum reconhecedor de fala do Windows está instalado.');
+    if (r.code !== 0) throw new Error(`O reconhecimento de fala do Windows falhou: ${r.err.split('\n')[0].slice(0, 200)}`);
     return r.out.trim();
   } finally {
     fs.rmSync(file, { force: true }); // never retain recordings
@@ -73,6 +75,7 @@ export async function transcribeOpenAI(wav: Uint8Array, baseUrl: string, model: 
   const form = new FormData();
   form.append('file', new Blob([new Uint8Array(wav)], { type: 'audio/wav' }), 'speech.wav');
   form.append('model', model);
+  form.append('language', 'pt'); // Whisper: transcrever em português
   const res = await httpFetch(`${baseUrl.replace(/\/+$/, '')}/audio/transcriptions`, {
     method: 'POST', body: form, timeoutMs: 60_000, headers: key ? { authorization: `Bearer ${key}` } : {},
   });
@@ -83,11 +86,13 @@ export async function transcribeOpenAI(wav: Uint8Array, baseUrl: string, model: 
 const WAKE_SCRIPT = `
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Speech
-$rec = [System.Speech.Recognition.SpeechRecognitionEngine]::InstalledRecognizers() | Where-Object { $_.Culture.Name -like 'en-*' } | Select-Object -First 1
+$all = [System.Speech.Recognition.SpeechRecognitionEngine]::InstalledRecognizers()
+$rec = $all | Where-Object { $_.Culture.Name -like 'pt-*' } | Select-Object -First 1
+if (-not $rec) { $rec = $all | Where-Object { $_.Culture.Name -like 'en-*' } | Select-Object -First 1 }
 if (-not $rec) { [Console]::Error.WriteLine('NO_RECOGNIZER'); exit 3 }
 $e = New-Object System.Speech.Recognition.SpeechRecognitionEngine($rec)
 $choices = New-Object System.Speech.Recognition.Choices
-$choices.Add([string[]]@('hey capri','okay capri','hi capri','yo capri'))
+if ($rec.Culture.Name -like 'pt-*') { $choices.Add([string[]]@('ei capri','oi capri','olá capri','fala capri')) } else { $choices.Add([string[]]@('hey capri','okay capri','hi capri','yo capri')) }
 $gb = New-Object System.Speech.Recognition.GrammarBuilder($choices)
 $gb.Culture = $rec.Culture
 $e.LoadGrammar((New-Object System.Speech.Recognition.Grammar($gb)))
@@ -137,9 +142,9 @@ export class WakeWordListener extends EventEmitter {
     child.on('exit', (code) => {
       this.child = null;
       if (this.stopping) return;
-      if (code === 3) { this.emit('error', new Error('No speech recognizer installed')); return; }
+      if (code === 3) { this.emit('error', new Error('Nenhum reconhecedor de fala instalado')); return; }
       if (this.restarts++ < 3) setTimeout(() => this.start(), 2000 * this.restarts);
-      else this.emit('error', new Error('Wake word listener keeps crashing; disabled'));
+      else this.emit('error', new Error('A escuta da palavra de ativação continua falhando; desativada'));
     });
   }
   /** Ignore wakes while we're recording/speaking ourselves. */

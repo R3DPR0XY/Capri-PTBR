@@ -177,6 +177,12 @@ describe('audio utilities', () => {
     while (!s && t < 10_000) { s = silent.push(0.001, 100); t += 100; }
     expect(t).toBe(2000);
   });
+  it('prefere uma voz feminina em português do Brasil', () => {
+    const v = (name: string, lang = 'pt-BR') => ({ name, lang, localService: true }) as SpeechSynthesisVoice;
+    const voices = [v('Microsoft Zira Desktop', 'en-US'), v('Microsoft Daniel', 'pt-BR'), v('Microsoft Maria Desktop', 'pt-BR')];
+    expect(pickVoice(voices, '')?.name).toBe('Microsoft Maria Desktop');
+    expect(pickVoice(voices, 'Microsoft Zira Desktop')?.name).toBe('Microsoft Zira Desktop');
+  });
   it('prefers an English female substitute voice, honours explicit choice', () => {
     const v = (name: string, lang = 'en-US') => ({ name, lang, localService: true }) as SpeechSynthesisVoice;
     const voices = [v('Microsoft David Desktop'), v('Microsoft Zira Desktop'), v('Microsoft Haruka', 'ja-JP')];

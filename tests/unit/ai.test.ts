@@ -76,7 +76,7 @@ describe('providers (streaming over HTTP)', () => {
     const p = new OllamaProvider('http://127.0.0.1:1', 'x');
     const err = await collect(p.stream(msgs, opts())).catch((e) => e);
     expect(err).toBeInstanceOf(ProviderError);
-    expect(friendlyError(err)).toMatch(/reach|server/i);
+    expect(friendlyError(err)).toMatch(/servidor/i);
   });
   it('cloud provider without a key fails fast with a config error', async () => {
     await expect(collect(new OpenAIProvider('https://api.example.com/v1', 'm', undefined).stream(msgs, opts()))).rejects.toMatchObject({ kind: 'config' });
@@ -218,7 +218,7 @@ describe('Conversation orchestrator', () => {
     await h.c.send('hi');
     await h.c.settle();
     const last = h.history.recent(5).at(-1)!;
-    expect(last.meta?.error).toMatch(/reach/);
+    expect(last.meta?.error).toMatch(/servidor/);
     expect(h.events.some((e) => e.ch === 'chat:phase' && (e.p as { phase: string }).phase === 'error')).toBe(true);
     // failed turns are excluded from future context
     const seen: LLMMessage[][] = [];
@@ -242,6 +242,6 @@ describe('Conversation orchestrator', () => {
     await h.c.send('note: water the plants');
     await h.c.settle();
     expect(h.ctx.notes.list()[0].body).toBe('water the plants');
-    expect(h.history.recent(5).at(-1)!.content).toMatch(/Saved note/);
+    expect(h.history.recent(5).at(-1)!.content).toMatch(/Nota .* salva/);
   });
 });

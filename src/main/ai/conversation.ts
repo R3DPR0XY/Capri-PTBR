@@ -184,7 +184,7 @@ export class Conversation {
     }
     const req: ActionRequest = { id: newId('act'), tool: prepared.tool, args: prepared.args, summary: prepared.summary, policy: prepared.policy, tainted };
     if (prepared.policy === 'deny') {
-      this.record(req.tool, 'blocked', `${req.summary} — blocked by your permission settings`);
+      this.record(req.tool, 'blocked', `${req.summary} — bloqueado pelas suas permissões`);
       return { line: `- ${req.tool} failed: blocked by user permission settings`, untrusted: false };
     }
     let approved = prepared.policy === 'allow';
@@ -196,7 +196,7 @@ export class Conversation {
       ]);
       if (signal.aborted) throw new ProviderError('aborted', 'aborted');
       if (!approved) {
-        this.record(req.tool, 'declined', `${req.summary} — you declined`);
+        this.record(req.tool, 'declined', `${req.summary} — você recusou`);
         return { line: `- ${req.tool} failed: the user declined this action`, untrusted: false };
       }
     }

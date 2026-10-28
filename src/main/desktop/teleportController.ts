@@ -94,15 +94,15 @@ export class TeleportController {
   }
 
   async go(target: TeleportTarget, reason: 'manual' | 'auto' | 'ai', how: 'teleport' | 'glide' | 'either' = 'teleport'): Promise<{ ok: boolean; detail: string; to?: Rect }> {
-    if (this.busy) return { ok: false, detail: 'Already teleporting' };
+    if (this.busy) return { ok: false, detail: 'Já estou me teletransportando' };
     const cur = this.d.bounds();
-    if (!cur) return { ok: false, detail: 'Character is not on screen' };
+    if (!cur) return { ok: false, detail: 'A personagem não está na tela' };
     const s = this.d.settings();
     const dest = chooseDestination(target, {
       displays: this.d.displays(), current: cur, cursor: this.d.cursor(),
       avoid: s.teleport.avoidActiveWindow ? this.d.activeWindow() : null,
     });
-    if (!dest) return { ok: false, detail: target === 'perch' ? 'No window to sit on (needs a non-maximised window with room above it)' : 'No free spot to teleport to' };
+    if (!dest) return { ok: false, detail: target === 'perch' ? 'Nenhuma janela para sentar (precisa de uma janela não maximizada com espaço acima)' : 'Nenhum lugar livre para o teletransporte' };
     this.busy = true;
     // short hops on the same screen are sometimes a glide instead of a teleport
     const near = Math.hypot(dest.x - cur.x, dest.y - cur.y) < 900 && this.d.displays().some((x) => x.workArea.x <= cur.x + cur.width / 2 && cur.x + cur.width / 2 < x.workArea.x + x.workArea.width && x.workArea.x <= dest.x + dest.width / 2 && dest.x + dest.width / 2 < x.workArea.x + x.workArea.width);
@@ -113,7 +113,7 @@ export class TeleportController {
         this.last = `${new Date().toLocaleTimeString()} (${reason}, glide ${target}) → ${dest.x},${dest.y}`;
         this.d.moved?.(dest, 'glide');
         this.d.log.info('glide', { reason, target, kind: dest.kind });
-        return { ok: true, detail: `Glided (${target.replace('_', ' ')})`, to: dest };
+        return { ok: true, detail: `Deslizou (${target.replace('_', ' ')})`, to: dest };
       } finally { this.busy = false; }
     }
     const id = ++this.seq;
@@ -128,7 +128,7 @@ export class TeleportController {
       this.count++;
       this.last = `${new Date().toLocaleTimeString()} (${reason}, ${target}) → ${dest.x},${dest.y}`;
       this.d.log.info('teleport', { reason, target, x: dest.x, y: dest.y, outOk, inOk });
-      return { ok: true, detail: `Teleported (${target.replace('_', ' ')})`, to: dest };
+      return { ok: true, detail: `Teletransportou (${target.replace('_', ' ')})`, to: dest };
     } finally {
       this.busy = false;
     }
@@ -142,7 +142,7 @@ export class TeleportController {
 
   private schedule() {
     const s = this.d.settings().teleport;
-    if (!s.auto) { this.lastBlocked = 'automatic teleport is off'; return; }
+    if (!s.auto) { this.lastBlocked = 'teletransporte automático desligado'; return; }
     const delay = nextAutoDelay(s.minMinutes, s.maxMinutes);
     this.nextAt = Date.now() + delay;
     this.autoTimer = setTimeout(() => void this.autoTick(), delay);
@@ -152,9 +152,9 @@ export class TeleportController {
   /** Exposed for tests. Returns the reason it didn't teleport, or null if it did. */
   async autoTick(): Promise<string | null> {
     this.autoTimer = null;
-    const reason = !this.d.settings().teleport.auto ? 'automatic teleport is off'
-      : !this.d.aiConnected() ? 'AI is not connected'
-      : this.d.blocked() ?? (this.d.userIdleSec() > 300 ? 'user is away' : null);
+    const reason = !this.d.settings().teleport.auto ? 'teletransporte automático desligado'
+      : !this.d.aiConnected() ? 'IA não conectada'
+      : this.d.blocked() ?? (this.d.userIdleSec() > 300 ? 'usuário ausente' : null);
     this.lastBlocked = reason;
     if (!reason) await this.go('auto', 'auto', 'either');
     else this.d.log.debug('auto teleport skipped', { reason });
@@ -170,7 +170,7 @@ export class TeleportController {
       nextInSec: this.nextAt ? Math.max(0, Math.round((this.nextAt - Date.now()) / 1000)) : null,
       last: this.last,
       count: this.count,
-      blockedReason: !this.d.aiConnected() ? 'AI is not connected' : this.lastBlocked,
+      blockedReason: !this.d.aiConnected() ? 'IA não conectada' : this.lastBlocked,
     };
   }
 }

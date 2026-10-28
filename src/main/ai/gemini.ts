@@ -40,16 +40,16 @@ export function classifyGeminiError(e: unknown, key?: string): ProviderError {
   } catch { /* not JSON */ }
   const text = scrub(msg || String(err.message ?? 'unknown error')).slice(0, 300);
   if (!status) {
-    if (/timed? ?out|timeout/i.test(String(err.message))) return new ProviderError('Gemini request timed out', 'timeout');
-    return new ProviderError(`Network error reaching Gemini: ${text}`, 'network');
+    if (/timed? ?out|timeout/i.test(String(err.message))) return new ProviderError('Gemini: tempo esgotado', 'timeout');
+    return new ProviderError(`Erro de rede ao falar com o Gemini: ${text}`, 'network');
   }
   if (reason === 'API_KEY_INVALID' || status === 401 || status === 403 || rpcStatus === 'PERMISSION_DENIED' || rpcStatus === 'UNAUTHENTICATED') {
-    return new ProviderError(reason === 'API_KEY_INVALID' ? 'Gemini rejected the API key (API_KEY_INVALID).' : `Gemini denied access: ${text}`, 'auth', status);
+    return new ProviderError(reason === 'API_KEY_INVALID' ? 'Gemini recusou a chave de API (API_KEY_INVALID).' : `Gemini negou o acesso: ${text}`, 'auth', status);
   }
-  if (status === 404 || rpcStatus === 'NOT_FOUND') return new ProviderError(`Gemini model not available: ${text}`, 'model', status);
-  if (status === 429 || rpcStatus === 'RESOURCE_EXHAUSTED') return new ProviderError(`Gemini rate limit / quota: ${text}`, 'rate_limit', status, retryMs);
-  if (status >= 500) return new ProviderError(`Gemini server error ${status}: ${text}`, 'server', status);
-  return new ProviderError(`Gemini request rejected (${status}): ${text}`, 'bad_request', status);
+  if (status === 404 || rpcStatus === 'NOT_FOUND') return new ProviderError(`Gemini: modelo indisponível: ${text}`, 'model', status);
+  if (status === 429 || rpcStatus === 'RESOURCE_EXHAUSTED') return new ProviderError(`Gemini: limite de uso / cota: ${text}`, 'rate_limit', status, retryMs);
+  if (status >= 500) return new ProviderError(`Gemini: erro no servidor ${status}: ${text}`, 'server', status);
+  return new ProviderError(`Gemini: requisição recusada (${status}): ${text}`, 'bad_request', status);
 }
 
 const sleep = (ms: number, signal: AbortSignal) => new Promise<void>((res, rej) => {
@@ -65,7 +65,7 @@ export class GeminiProvider implements LLMProvider {
   constructor(private c: GeminiConfig) {}
 
   private client(timeoutMs: number) {
-    if (!this.c.apiKey) throw new ProviderError('No Gemini API key. Add one in Model, or set the GEMINI_API_KEY environment variable.', 'config');
+    if (!this.c.apiKey) throw new ProviderError('Sem chave do Gemini. Adicione uma na aba Modelo ou defina a variável de ambiente GEMINI_API_KEY.', 'config');
     return new GoogleGenAI({ apiKey: this.c.apiKey, httpOptions: { timeout: timeoutMs, retryOptions: { attempts: 1 }, ...(this.c.serverUrl ? { baseUrl: this.c.serverUrl } : {}) } });
   }
 
@@ -117,7 +117,7 @@ export class GeminiProvider implements LLMProvider {
             started = true;
             const ev = r.value;
             if (ev.event_type === 'step.delta' && ev.delta?.type === 'text' && ev.delta.text) { yielded = true; yield ev.delta.text; }
-            else if (ev.event_type === 'error') throw new ProviderError(`Gemini stream error: ${ev.error?.message ?? ev.error?.code ?? 'unknown'}`, 'server');
+            else if (ev.event_type === 'error') throw new ProviderError(`Gemini: erro no streaming: ${ev.error?.message ?? ev.error?.code ?? 'desconhecido'}`, 'server');
           }
           return;
         } catch (e) {
@@ -125,7 +125,7 @@ export class GeminiProvider implements LLMProvider {
           if (!yielded && !o.signal.aborted && !this.noThinkingLevel.has(model) && /thinking level/i.test(String((e as Error)?.message ?? e))) {
             this.noThinkingLevel.add(model); attempt--; continue; // e.g. gemini-3.8-flash has no 'minimal'
           }
-          const pe = o.signal.aborted ? new ProviderError('aborted', 'aborted') : stalled ? new ProviderError('Gemini stopped responding', 'timeout') : classifyGeminiError(e, this.c.apiKey);
+          const pe = o.signal.aborted ? new ProviderError('aborted', 'aborted') : stalled ? new ProviderError('Gemini parou de responder', 'timeout') : classifyGeminiError(e, this.c.apiKey);
           if (pe.kind === 'aborted' || pe.kind === 'auth' || pe.kind === 'config' || yielded) throw pe; // never duplicate partial output
           lastErr = pe;
           if (pe.kind === 'model') break; // try the fallback model
@@ -146,7 +146,7 @@ export class GeminiProvider implements LLMProvider {
         }
       }
     }
-    throw lastErr ?? new ProviderError('Gemini request failed', 'server');
+    throw lastErr ?? new ProviderError('Gemini: a requisição falhou', 'server');
   }
 
   async listModels(): Promise<string[]> {
@@ -166,8 +166,8 @@ export class GeminiProvider implements LLMProvider {
       const models = await this.listModels();
       const has = models.includes(this.c.model);
       const fb = this.c.fallbackModel && models.includes(this.c.fallbackModel);
-      if (!has) return { ok: false, detail: `Key accepted, but model "${this.c.model}" isn't available to it${fb ? ` (fallback "${this.c.fallbackModel}" is)` : ''}.`, latencyMs: Date.now() - t0 };
-      return { ok: true, detail: `Connected to Gemini · ${this.c.model}${this.c.fallbackModel ? ` (fallback ${this.c.fallbackModel}${fb ? '' : ' unavailable'})` : ''}`, latencyMs: Date.now() - t0 };
+      if (!has) return { ok: false, detail: `Chave aceita, mas o modelo "${this.c.model}" não está disponível para ela${fb ? ` (o reserva "${this.c.fallbackModel}" está)` : ''}.`, latencyMs: Date.now() - t0 };
+      return { ok: true, detail: `Conectada ao Gemini · ${this.c.model}${this.c.fallbackModel ? ` (reserva ${this.c.fallbackModel}${fb ? '' : ' indisponível'})` : ''}`, latencyMs: Date.now() - t0 };
     } catch (e) {
       const pe = classifyGeminiError(e, this.c.apiKey);
       return { ok: false, detail: pe.message };

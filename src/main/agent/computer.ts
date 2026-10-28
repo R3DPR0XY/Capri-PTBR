@@ -46,15 +46,15 @@ const EXPLORE_RULES = `
 You are exploring on your own while the user is away; nobody asked you to. Read and look around only:
 - Allowed: click links and tabs, scroll, go back (key "alt+left"), page down. Nothing else.
 - Never type anything, never sign in, post, comment, vote, like, follow, subscribe, download, buy, or change settings. Close nothing.
-- Stay on the site you're on. After 6–12 actions, finish with "done" and "result" = one or two sentences in your own voice telling the user what you found and what you think of it.`;
+- Stay on the site you're on. After 6–12 actions, finish with "done" and "result" = one or two sentences in your own voice telling the user, in Brazilian Portuguese, what you found and what you think of it.`;
 
 export function systemPrompt(task: string, history: string[], w: number, h: number, explore = false) {
   return `You are Capri, controlling the user's Windows PC${explore ? ' on your own' : ' to do a task they asked for'}. You see a screenshot of their screen (${w}×${h}). Reply with JSON only:
-{"say": optional short in-character line (under 10 words), "actions": [ up to 5 actions, run in order ]}
+{"say": optional short in-character line in Brazilian Portuguese (under 10 words), "actions": [ up to 5 actions, run in order ]}
 Each action: {"action": one of ${JSON.stringify(ACTIONS)}, "point": [y, x] in 0–1000 screenshot coordinates (exact centre of the target; for click, double_click, right_click, move, and optionally type/scroll), "text": for type, "keys": for key (e.g. "ctrl+l", "enter", "win"), "amount": for scroll (positive = down), "result": for done/fail}
 
 Rules:
-- The task: ${JSON.stringify(task)}. Do only that. When it's complete, finish with {"action":"done","result": one sentence}.
+- The task: ${JSON.stringify(task)}. Do only that. When it's complete, finish with {"action":"done","result": one sentence in Brazilian Portuguese}.
 - Be fast: put several actions in one reply when you're sure of them without seeing the screen change (e.g. key "win", type "notepad", key "enter"; or type into a box then key "enter"). Use one action when the next step depends on what appears.
 - To type into a field, give "type" a "point" on that field: it clicks there first. To open an app: key "win", type its name, key "enter".
 - Never type passwords, card numbers or personal data; never buy, pay, delete files, send messages or emails, post, or change system/security settings. If the task needs any of that, or a sign-in, finish with "fail" and say why.
@@ -98,24 +98,24 @@ export async function runTask(task: string, d: AgentDeps, signal: AbortSignal, o
   const t0 = Date.now();
   let bad = 0, n = 0;
   while (n < maxSteps) {
-    if (signal.aborted || d.stopRequested()) return { ok: false, summary: 'Stopped by the user.', steps: n };
-    if (Date.now() - t0 > LIMITS.ms) return { ok: false, summary: 'Ran out of time (4 minutes).', steps: n };
+    if (signal.aborted || d.stopRequested()) return { ok: false, summary: 'Interrompida pelo usuário.', steps: n };
+    if (Date.now() - t0 > LIMITS.ms) return { ok: false, summary: 'Acabou o tempo (4 minutos).', steps: n };
     const screen = await d.capture();
     let reply: { say?: string; steps: Step[] };
     try {
       reply = parseSteps(await d.decide(systemPrompt(task, history, screen.width, screen.height, explore), screen, signal));
       bad = 0;
     } catch (e) {
-      if (signal.aborted) return { ok: false, summary: 'Stopped by the user.', steps: n };
+      if (signal.aborted) return { ok: false, summary: 'Interrompida pelo usuário.', steps: n };
       d.log?.('agent: bad step', { error: (e as Error).message });
-      if (++bad >= 3) return { ok: false, summary: `Couldn't work out the next step (${(e as Error).message.slice(0, 160)}).`, steps: n };
+      if (++bad >= 3) return { ok: false, summary: `Não consegui descobrir o próximo passo (${(e as Error).message.slice(0, 160)}).`, steps: n };
       n++;
       continue;
     }
     for (let j = 0; j < reply.steps.length && n < maxSteps; j++, n++) {
       const step = reply.steps[j];
       if (j === 0 && reply.say) step.say = reply.say;
-      if (d.stopRequested() || signal.aborted) return { ok: false, summary: 'Stopped by the user.', steps: n };
+      if (d.stopRequested() || signal.aborted) return { ok: false, summary: 'Interrompida pelo usuário.', steps: n };
       if (explore && (step.action === 'type' || step.action === 'right_click' || (step.action === 'key' && !EXPLORE_KEYS.has((step.keys ?? '').toLowerCase().replace(/\s+/g, ''))))) {
         history.push(`not allowed while exploring: ${step.action}${step.keys ? ` ${step.keys}` : ''} (read and scroll only)`);
         n++;
@@ -125,8 +125,8 @@ export async function runTask(task: string, d: AgentDeps, signal: AbortSignal, o
       d.onStep?.(step, at);
       d.log?.('agent: step', { i: n, action: step.action, keys: step.keys, chars: step.text?.length });
       switch (step.action) {
-        case 'done': return { ok: true, summary: step.result || 'Done.', steps: n + 1 };
-        case 'fail': return { ok: false, summary: step.result || 'Could not do that.', steps: n + 1 };
+        case 'done': return { ok: true, summary: step.result || 'Pronto.', steps: n + 1 };
+        case 'fail': return { ok: false, summary: step.result || 'Não consegui fazer isso.', steps: n + 1 };
         case 'click': case 'double_click': case 'right_click': case 'move':
           if (!at) { history.push(`${step.action} without a point (ignored)`); continue; }
           await d.hands.moveTo(at.x, at.y);
@@ -156,5 +156,5 @@ export async function runTask(task: string, d: AgentDeps, signal: AbortSignal, o
       await new Promise((r) => setTimeout(r, settle(step, j === reply.steps.length - 1)));
     }
   }
-  return { ok: false, summary: `Stopped after ${maxSteps} steps without finishing.`, steps: maxSteps };
+  return { ok: false, summary: `Parei depois de ${maxSteps} passos sem terminar.`, steps: maxSteps };
 }

@@ -8,7 +8,7 @@ import type { Logger } from '../log';
  * real authenticated API check or a successful reply — never assumed.
  */
 export class ConnectionMonitor extends EventEmitter {
-  status: ConnectionStatus = { state: 'disconnected', provider: 'none', detail: 'Not checked yet', checkedAt: 0 };
+  status: ConnectionStatus = { state: 'disconnected', provider: 'none', detail: 'Ainda não verificado', checkedAt: 0 };
   private timer: NodeJS.Timeout | null = null;
   private checking: Promise<void> | null = null;
   private gen = 0;
@@ -36,10 +36,10 @@ export class ConnectionMonitor extends EventEmitter {
     const gen = ++this.gen;
     const p = this.make();
     if (p.name === 'offline') {
-      this.set({ state: 'disconnected', provider: 'offline', model: undefined, usingFallback: false, detail: 'No AI model — offline command mode' });
+      this.set({ state: 'disconnected', provider: 'offline', model: undefined, usingFallback: false, detail: 'Sem modelo de IA — modo de comandos offline' });
       return Promise.resolve();
     }
-    this.set({ state: 'connecting', provider: p.name, detail: `Connecting (${reason})…` });
+    this.set({ state: 'connecting', provider: p.name, detail: `Conectando (${reason})…` });
     this.checking = p.test().then((r) => {
       if (gen !== this.gen) return; // superseded by a newer check
       if (r.ok) this.set({ state: 'connected', detail: r.detail, latencyMs: r.latencyMs, usingFallback: false });
@@ -50,7 +50,7 @@ export class ConnectionMonitor extends EventEmitter {
 
   /** A real reply streamed successfully. */
   reportSuccess(provider: string, model?: string, usingFallback = false) {
-    this.set({ state: 'connected', provider, model, usingFallback, detail: usingFallback ? `Connected via fallback model ${model}` : `Connected${model ? ` · ${model}` : ''}` });
+    this.set({ state: 'connected', provider, model, usingFallback, detail: usingFallback ? `Conectada pelo modelo reserva ${model}` : `Conectada${model ? ` · ${model}` : ''}` });
   }
   /** A request failed: network → disconnected; auth/config/model → error; transient → keep state, note it. */
   reportFailure(e: unknown) {

@@ -23,15 +23,15 @@ export class ProviderError extends Error {
 export function friendlyError(e: unknown): string {
   if (e instanceof ProviderError) {
     switch (e.kind) {
-      case 'auth': return `${e.message.startsWith('Gemini') ? e.message + ' ' : 'The model provider rejected the API key. '}Check it in Model settings.`;
-      case 'model': return `${e.message} Pick another model in Model settings.`;
-      case 'rate_limit': return `The provider is rate-limiting requests${e.retryAfterMs ? ` (retry in ~${Math.ceil(e.retryAfterMs / 1000)} s)` : ''}. Try again in a moment.`;
-      case 'network': return 'Couldn’t reach the model server. Check your connection or that the local server is running.';
-      case 'timeout': return 'The model took too long to respond (timeout).';
-      case 'server': return `The model server had an error (${e.status ?? '?'}).`;
+      case 'auth': return `${e.message.startsWith('Gemini') ? e.message + ' ' : 'O provedor recusou a chave de API. '}Confira na aba Modelo.`;
+      case 'model': return `${e.message} Escolha outro modelo na aba Modelo.`;
+      case 'rate_limit': return `O provedor está limitando as requisições${e.retryAfterMs ? ` (tente em ~${Math.ceil(e.retryAfterMs / 1000)} s)` : ''}. Tente de novo daqui a pouco.`;
+      case 'network': return 'Não consegui falar com o servidor do modelo. Confira sua conexão ou se o servidor local está rodando.';
+      case 'timeout': return 'O modelo demorou demais para responder (tempo esgotado).';
+      case 'server': return `O servidor do modelo deu erro (${e.status ?? '?'}).`;
       case 'config': return e.message;
-      case 'aborted': return 'Stopped.';
-      default: return `Request failed: ${e.message}`;
+      case 'aborted': return 'Interrompido.';
+      default: return `A requisição falhou: ${e.message}`;
     }
   }
   return e instanceof Error ? e.message : String(e);
@@ -145,8 +145,8 @@ export class OllamaProvider implements LLMProvider {
       const models = await this.listModels();
       const has = models.some((m) => m === this.model || m.split(':')[0] === this.model);
       return has
-        ? { ok: true, detail: `Ollama reachable, model "${this.model}" installed`, latencyMs: Date.now() - t0 }
-        : { ok: false, detail: `Ollama reachable but model "${this.model}" is not installed. Run: ollama pull ${this.model}` };
+        ? { ok: true, detail: `Ollama acessível, modelo "${this.model}" instalado`, latencyMs: Date.now() - t0 }
+        : { ok: false, detail: `Ollama acessível, mas o modelo "${this.model}" não está instalado. Rode: ollama pull ${this.model}` };
     } catch (e) { return { ok: false, detail: friendlyError(e) }; }
   }
 }
@@ -161,7 +161,7 @@ export class OpenAIProvider implements LLMProvider {
     return h;
   }
   async *stream(messages: LLMMessage[], o: GenOptions) {
-    if (!this.key && !this.local) throw new ProviderError('No API key set for the OpenAI-compatible provider (Settings → Model).', 'config');
+    if (!this.key && !this.local) throw new ProviderError('Nenhuma chave de API para o provedor compatível com OpenAI (aba Modelo).', 'config');
     const res = await withRetry(() => httpFetch(`${trimSlash(this.baseUrl)}/chat/completions`, {
       method: 'POST', timeoutMs: o.timeoutMs, signal: o.signal, headers: this.headers(),
       body: JSON.stringify({ model: this.model, messages, stream: true, temperature: o.temperature, max_tokens: o.maxTokens }),
@@ -185,8 +185,8 @@ export class OpenAIProvider implements LLMProvider {
   }
   async test() {
     const t0 = Date.now();
-    if (!this.key && !this.local) return { ok: false, detail: 'No API key set.' };
-    try { await this.listModels(); return { ok: true, detail: `Endpoint reachable (${this.baseUrl})`, latencyMs: Date.now() - t0 }; }
+    if (!this.key && !this.local) return { ok: false, detail: 'Nenhuma chave de API definida.' };
+    try { await this.listModels(); return { ok: true, detail: `Endpoint acessível (${this.baseUrl})`, latencyMs: Date.now() - t0 }; }
     catch (e) { return { ok: false, detail: friendlyError(e) }; }
   }
 }
@@ -196,7 +196,7 @@ export class AnthropicProvider implements LLMProvider {
   readonly local = false;
   constructor(private baseUrl: string, private model: string, private key: string | undefined) {}
   async *stream(messages: LLMMessage[], o: GenOptions) {
-    if (!this.key) throw new ProviderError('No Anthropic API key set (Settings → Model).', 'config');
+    if (!this.key) throw new ProviderError('Nenhuma chave de API da Anthropic (aba Modelo).', 'config');
     const system = messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n\n');
     const convo = messages.filter((m) => m.role !== 'system');
     const res = await withRetry(() => httpFetch(`${trimSlash(this.baseUrl)}/v1/messages`, {
@@ -222,8 +222,8 @@ export class AnthropicProvider implements LLMProvider {
   }
   async test() {
     const t0 = Date.now();
-    if (!this.key) return { ok: false, detail: 'No Anthropic API key set.' };
-    try { await this.listModels(); return { ok: true, detail: 'Anthropic API reachable, key accepted', latencyMs: Date.now() - t0 }; }
+    if (!this.key) return { ok: false, detail: 'Nenhuma chave de API da Anthropic.' };
+    try { await this.listModels(); return { ok: true, detail: 'API da Anthropic acessível, chave aceita', latencyMs: Date.now() - t0 }; }
     catch (e) { return { ok: false, detail: friendlyError(e) }; }
   }
 }

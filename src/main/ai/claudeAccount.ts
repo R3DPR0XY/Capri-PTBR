@@ -28,15 +28,15 @@ export interface ClaudeStatus { installed: boolean; loggedIn: boolean; account?:
 /** Whether the CLI is installed and signed in (`claude auth status --json`). */
 export function claudeStatus(): Promise<ClaudeStatus> {
   const exe = findClaude();
-  if (!exe) return Promise.resolve({ installed: false, loggedIn: false, detail: 'Claude Code isn’t installed.' });
+  if (!exe) return Promise.resolve({ installed: false, loggedIn: false, detail: 'O Claude Code não está instalado.' });
   return new Promise((resolve) => {
     execFile(exe, ['auth', 'status', '--json'], { timeout: 20_000, windowsHide: true }, (err, stdout) => {
       try {
         const j = JSON.parse(String(stdout)) as { loggedIn?: boolean; email?: string; account?: { email?: string }; subscriptionType?: string };
         const account = j.email ?? j.account?.email;
-        resolve({ installed: true, loggedIn: !!j.loggedIn, account, detail: j.loggedIn ? `Signed in${account ? ` as ${account}` : ''}` : 'Not signed in.' });
+        resolve({ installed: true, loggedIn: !!j.loggedIn, account, detail: j.loggedIn ? `Conectado${account ? ` como ${account}` : ''}` : 'Não conectado.' });
       } catch {
-        resolve({ installed: true, loggedIn: false, detail: err ? `Couldn’t check sign-in: ${err.message.slice(0, 120)}` : 'Couldn’t check sign-in.' });
+        resolve({ installed: true, loggedIn: false, detail: err ? `Não deu para verificar o login: ${err.message.slice(0, 120)}` : 'Não deu para verificar o login.' });
       }
     });
   });
@@ -50,13 +50,13 @@ let login: ReturnType<typeof spawn> | null = null;
 /** Start sign-in. Resolves with the sign-in link once the CLI prints it (the caller opens it). */
 export function claudeSignIn(): Promise<{ ok: boolean; url?: string; detail?: string }> {
   const exe = findClaude();
-  if (!exe) return Promise.resolve({ ok: false, detail: 'Claude Code isn’t installed.' });
+  if (!exe) return Promise.resolve({ ok: false, detail: 'O Claude Code não está instalado.' });
   login?.kill();
   const child = spawn(exe, ['auth', 'login', '--claudeai'], { cwd: os.tmpdir(), windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, BROWSER: 'none' } });
   login = child;
   return new Promise((resolve) => {
     let out = '';
-    const timer = setTimeout(() => resolve({ ok: false, detail: 'Claude Code didn’t start the sign-in.' }), 20_000);
+    const timer = setTimeout(() => resolve({ ok: false, detail: 'O Claude Code não iniciou o login.' }), 20_000);
     const onData = (b: Buffer) => {
       out += b.toString('utf8');
       const m = /https:\/\/\S+oauth\/authorize\S+/.exec(out);
@@ -71,7 +71,7 @@ export function claudeSignIn(): Promise<{ ok: boolean; url?: string; detail?: st
 /** Give the waiting CLI the code from the browser, then report whether sign-in worked. */
 export async function claudeSubmitCode(code: string): Promise<ClaudeStatus> {
   const child = login;
-  if (!child || child.exitCode !== null) return { installed: true, loggedIn: false, detail: 'Sign-in expired. Click Sign in again.' };
+  if (!child || child.exitCode !== null) return { installed: true, loggedIn: false, detail: 'O login expirou. Clique em Entrar de novo.' };
   child.stdin?.write(code.trim() + '\n');
   await new Promise<void>((r) => { const t = setTimeout(r, 30_000); child.once('close', () => { clearTimeout(t); r(); }); });
   if (child.exitCode === null) child.kill();
@@ -99,7 +99,7 @@ export class ClaudeAccountProvider implements LLMProvider {
 
   async *stream(messages: LLMMessage[], o: GenOptions): AsyncGenerator<string> {
     const exe = findClaude();
-    if (!exe) throw new ProviderError('Claude Code isn’t installed. Install it from claude.com/code, then sign in under Model.', 'config');
+    if (!exe) throw new ProviderError('O Claude Code não está instalado. Instale em claude.com/code e entre na aba Modelo.', 'config');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'capri-claude-'));
     const sysFile = path.join(dir, 'system.txt');
     fs.writeFileSync(sysFile, messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n\n'));
@@ -137,19 +137,19 @@ export class ClaudeAccountProvider implements LLMProvider {
         } else if (ev.type === 'result' && ev.is_error) {
           const msg = `${ev.result ?? ''} ${ev.subtype ?? ''}`;
           failure = /log ?in|auth|401|403|credential/i.test(msg) || ev.api_error_status === 401
-            ? new ProviderError('Not signed in to Claude. Sign in under Model → Claude.', 'auth')
+            ? new ProviderError('Não conectado ao Claude. Entre em Modelo → Claude.', 'auth')
             : /rate|limit|429|usage/i.test(msg) || ev.api_error_status === 429
-              ? new ProviderError('Your Claude usage limit is reached for now. Try again later.', 'rate_limit')
-              : new ProviderError(`Claude couldn’t answer: ${msg.trim().slice(0, 160) || 'unknown error'}`, 'server');
+              ? new ProviderError('Seu limite de uso do Claude acabou por enquanto. Tente mais tarde.', 'rate_limit')
+              : new ProviderError(`O Claude não conseguiu responder: ${msg.trim().slice(0, 160) || 'erro desconhecido'}`, 'server');
           push();
         }
       }
     });
     child.stderr.on('data', (b: Buffer) => { stderr += b.toString('utf8'); if (stderr.length > 4000) stderr = stderr.slice(-4000); });
-    child.on('error', (e) => { failure = new ProviderError(`Couldn’t start Claude Code: ${e.message}`, 'config'); done = true; push(); });
+    child.on('error', (e) => { failure = new ProviderError(`Não deu para iniciar o Claude Code: ${e.message}`, 'config'); done = true; push(); });
     child.on('close', (code) => {
       if (!failure && !gotText && code !== 0 && !o.signal.aborted) {
-        failure = /log ?in|auth/i.test(stderr) ? new ProviderError('Not signed in to Claude. Sign in under Model → Claude.', 'auth') : new ProviderError(`Claude Code exited (${code}). ${stderr.trim().slice(0, 160)}`, 'server');
+        failure = /log ?in|auth/i.test(stderr) ? new ProviderError('Não conectado ao Claude. Entre em Modelo → Claude.', 'auth') : new ProviderError(`O Claude Code fechou (${code}). ${stderr.trim().slice(0, 160)}`, 'server');
       }
       done = true; push();
     });
@@ -160,7 +160,7 @@ export class ClaudeAccountProvider implements LLMProvider {
         if (o.signal.aborted) throw new ProviderError('aborted', 'aborted');
         if (queue.length) { clearTimeout(timer); timer = setTimeout(kill, o.timeoutMs); yield queue.shift()!; continue; }
         if (failure) throw failure;
-        if (done) { if (!gotText && !o.signal.aborted) throw new ProviderError('Claude returned no answer (timed out?).', 'timeout'); return; }
+        if (done) { if (!gotText && !o.signal.aborted) throw new ProviderError('O Claude não respondeu (tempo esgotado?).', 'timeout'); return; }
         await new Promise<void>((r) => { wake = r; });
       }
     } finally {
@@ -174,7 +174,7 @@ export class ClaudeAccountProvider implements LLMProvider {
   async test() {
     const t0 = Date.now();
     const s = await claudeStatus();
-    return { ok: s.loggedIn, detail: s.installed ? s.detail : 'Claude Code isn’t installed.', latencyMs: Date.now() - t0 };
+    return { ok: s.loggedIn, detail: s.installed ? s.detail : 'O Claude Code não está instalado.', latencyMs: Date.now() - t0 };
   }
 
   async listModels() { return ['sonnet', 'opus', 'haiku']; }
